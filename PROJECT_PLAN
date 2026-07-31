@@ -1,0 +1,21 @@
+# DreamScape AI Roadmap
+
+## Completed
+- [x] Landing Page
+- [x] Login UI
+- [x] Signup UI
+- [x] GitHub Setup
+
+## In Progress
+- [ ] Dashboard
+
+## Remaining
+- [ ] Create Project
+- [ ] FastAPI Backend
+- [ ] Gemini Integration
+- [ ] 3D House Generator
+- [ ] Walkthrough
+- [ ] MongoDB
+- [ ] AI Suggestions
+- [ ] PDF Export
+- [ ] Deployment
