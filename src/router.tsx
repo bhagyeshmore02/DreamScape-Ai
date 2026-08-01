@@ -3,7 +3,7 @@ import type { ReactNode } from 'react'
 import { RouterContext } from './routerContext'
 import type { Route } from './routerContext'
 
-const VALID_ROUTES: Route[] = ['landing', 'login', 'signup', 'forgot-password']
+const VALID_ROUTES: Route[] = ['landing', 'login', 'signup', 'forgot-password', 'dashboard']
 
 function getRouteFromHash(): Route {
   const hash = window.location.hash.replace('#', '')

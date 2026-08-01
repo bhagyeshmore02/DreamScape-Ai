@@ -49,6 +49,7 @@ export default function LoginPage() {
     await new Promise(r => setTimeout(r, 1200))
     setSubmitting(false)
     setSubmitted(true)
+    navigate('dashboard')
   }
 
   const handleBlur = (field: 'email' | 'password') => {
