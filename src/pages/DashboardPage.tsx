@@ -105,7 +105,10 @@ export default function DashboardPage() {
                   ...(isActive  ? S.navItemActive  : {}),
                   ...(isHovered && !isActive ? S.navItemHover : {}),
                 }}
-                onClick={() => setActiveNav(item.id)}
+                onClick={() => {
+                  if (item.id === 'create') { navigate('create-project'); return }
+                  setActiveNav(item.id)
+                }}
                 onMouseEnter={() => setHoveredNav(item.id)}
                 onMouseLeave={() => setHoveredNav(null)}
               >
@@ -244,7 +247,7 @@ export default function DashboardPage() {
                 Continue designing your dream home with AI. Your latest project is 78% complete.
               </p>
               <div style={S.welcomeActions}>
-                <button style={S.btnPrimary} className="btn-primary" onClick={() => setActiveNav('create')}>
+                <button style={S.btnPrimary} className="btn-primary" onClick={() => navigate('create-project')}>
                   <span>✦</span> Create New Project
                 </button>
                 <button style={S.btnSecondary} className="btn-secondary">

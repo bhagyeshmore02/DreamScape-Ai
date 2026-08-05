@@ -1,6 +1,6 @@
 import { createContext, useContext } from 'react'
 
-export type Route = 'landing' | 'login' | 'signup' | 'forgot-password' | 'dashboard'
+export type Route = 'landing' | 'login' | 'signup' | 'forgot-password' | 'dashboard' | 'create-project'
 
 export interface RouterCtx {
   route: Route
