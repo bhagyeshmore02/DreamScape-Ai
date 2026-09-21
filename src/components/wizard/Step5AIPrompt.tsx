@@ -21,12 +21,58 @@ const CURRENCY = new Intl.NumberFormat('en-US', { style: 'currency', currency: '
 
 export function Step5AIPrompt({ data, update, onPrev }: Props) {
   const [isGenerating, setIsGenerating] = useState(false)
-  const [charCount, setCharCount]       = useState(data.aiPrompt.length)
+  const [charCount, setCharCount] = useState(data.aiPrompt.length)
+  const [aiResult, setAiResult] = useState('')
 
-  const handleGenerate = () => {
+  const handleGenerate = async () => {
     setIsGenerating(true)
-    // Simulate generation — no backend connected
-    setTimeout(() => setIsGenerating(false), 2000)
+
+    try {
+      const response = await fetch('http://127.0.0.1:8000/api/projects/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          project_name: data.projectName,
+          description: data.description,
+          house_style: data.houseStyle,
+
+          plot_width: Number(data.plotWidth),
+          plot_length: Number(data.plotLength),
+          plot_unit: data.plotUnit,
+          plot_shape: data.plotShape,
+
+          bedrooms: data.bedroomCount,
+          bathrooms: data.bathroomCount,
+
+          additional_rooms: data.rooms,
+
+          budget: data.budget,
+          construction_priority: data.constructionPriority,
+
+          special_features: data.features,
+
+          ai_prompt: data.aiPrompt,
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to create project')
+      }
+
+      const result = await response.json()
+
+      console.log('Backend response:', result)
+
+      setAiResult(result.ai_design)
+
+    } catch (error) {
+      console.error('Error:', error)
+      alert('Failed to connect to backend.')
+    } finally {
+      setIsGenerating(false)
+    }
   }
 
   const insertExample = (text: string) => {
@@ -103,12 +149,12 @@ export function Step5AIPrompt({ data, update, onPrev }: Props) {
           </div>
         </div>
         <div style={S.summaryGrid}>
-          <SummaryRow icon="✏️" label="Project Name"    value={data.projectName || '—'}        accent="#a78bfa" />
-          <SummaryRow icon="📐" label="Plot Size"        value={data.plotWidth && data.plotLength ? `${data.plotWidth} × ${data.plotLength} ${data.plotUnit}` : '—'} />
-          <SummaryRow icon="🛏" label="Bedrooms"         value={String(data.bedroomCount)}       accent="#67e8f9" />
-          <SummaryRow icon="🚿" label="Bathrooms"        value={String(data.bathroomCount)} />
-          <SummaryRow icon="💰" label="Budget"           value={CURRENCY.format(data.budget)}    accent="#f59e0b" />
-          <SummaryRow icon="🏗" label="House Style"      value={data.houseStyle || '—'} />
+          <SummaryRow icon="✏️" label="Project Name" value={data.projectName || '—'} accent="#a78bfa" />
+          <SummaryRow icon="📐" label="Plot Size" value={data.plotWidth && data.plotLength ? `${data.plotWidth} × ${data.plotLength} ${data.plotUnit}` : '—'} />
+          <SummaryRow icon="🛏" label="Bedrooms" value={String(data.bedroomCount)} accent="#67e8f9" />
+          <SummaryRow icon="🚿" label="Bathrooms" value={String(data.bathroomCount)} />
+          <SummaryRow icon="💰" label="Budget" value={CURRENCY.format(data.budget)} accent="#f59e0b" />
+          <SummaryRow icon="🏗" label="House Style" value={data.houseStyle || '—'} />
         </div>
         {roomList.length > 0 && (
           <>
