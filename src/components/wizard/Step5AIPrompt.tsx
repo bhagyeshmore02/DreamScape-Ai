@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import type { ProjectData } from '../../pages/CreateProjectPage'
 import { WizardButtons } from './WizardButtons'
+import ReactMarkdown from 'react-markdown'
 
 interface Props {
   data: ProjectData
@@ -207,6 +208,73 @@ export function Step5AIPrompt({ data, update, onPrev }: Props) {
             )}
           </AnimatePresence>
         </motion.button>
+
+        {aiResult && (
+          <div
+            style={{
+              marginTop: '24px',
+              padding: '24px',
+              borderRadius: '16px',
+              background: '#f8fafc',
+              border: '1px solid #e2e8f0',
+            }}
+          >
+            <h3
+              style={{
+                marginBottom: '12px',
+                fontSize: '20px',
+                fontWeight: 700,
+              }}
+            >
+              ✨ AI Design Recommendation
+            </h3>
+
+            <ReactMarkdown
+              components={{
+                h3: ({ children }) => (
+                  <h3
+                    style={{
+                      marginTop: '20px',
+                      marginBottom: '10px',
+                      fontSize: '18px',
+                      fontWeight: 700,
+                      color: '#1e293b',
+                    }}
+                  >
+                    {children}
+                  </h3>
+                ),
+
+                p: ({ children }) => (
+                  <p
+                    style={{
+                      marginBottom: '12px',
+                      lineHeight: 1.7,
+                      color: '#475569',
+                    }}
+                  >
+                    {children}
+                  </p>
+                ),
+
+                li: ({ children }) => (
+                  <li
+                    style={{
+                      marginBottom: '6px',
+                      lineHeight: 1.6,
+                      color: '#475569',
+                    }}
+                  >
+                    {children}
+                  </li>
+                ),
+              }}
+            >
+              {aiResult}
+            </ReactMarkdown>
+          </div>
+        )}
+
       </motion.div>
     </div>
   )
