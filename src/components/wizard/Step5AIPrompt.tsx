@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import type { ProjectData } from '../../pages/CreateProjectPage'
-import { WizardButtons } from './WizardButtons'
 import ReactMarkdown from 'react-markdown'
+import House3DPreview from '../house3d/House3DPreview'
 
 interface Props {
   data: ProjectData
@@ -24,6 +24,17 @@ export function Step5AIPrompt({ data, update, onPrev }: Props) {
   const [isGenerating, setIsGenerating] = useState(false)
   const [charCount, setCharCount] = useState(data.aiPrompt.length)
   const [aiResult, setAiResult] = useState('')
+  const [houseLayout, setHouseLayout] = useState<{
+    house_type: string
+    style: string
+    total_bedrooms: number
+    total_bathrooms: number
+    rooms: { name: string; width: number; length: number; position: { x: number; y: number } }[]
+    plot_width?: number
+    plot_length?: number
+    plot_unit?: string
+    warnings?: string[]
+  } | null>(null)
 
   const handleGenerate = async () => {
     setIsGenerating(true)
@@ -67,6 +78,41 @@ export function Step5AIPrompt({ data, update, onPrev }: Props) {
       console.log('Backend response:', result)
 
       setAiResult(result.ai_design)
+
+
+      const layoutResponse = await fetch(
+        'http://127.0.0.1:8000/api/projects/layout',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            project_name: data.projectName,
+            description: data.description,
+            house_style: data.houseStyle,
+            plot_width: Number(data.plotWidth),
+            plot_length: Number(data.plotLength),
+            plot_unit: data.plotUnit,
+            plot_shape: data.plotShape,
+            bedrooms: data.bedroomCount,
+            bathrooms: data.bathroomCount,
+            additional_rooms: data.rooms,
+            budget: data.budget,
+            construction_priority: data.constructionPriority,
+            special_features: data.features,
+            ai_prompt: data.aiPrompt,
+          }),
+        }
+      )
+
+      if (!layoutResponse.ok) {
+        throw new Error('Failed to generate house layout')
+      }
+
+      const layoutResult = await layoutResponse.json()
+      setHouseLayout(layoutResult.layout)
+
 
     } catch (error) {
       console.error('Error:', error)
@@ -276,6 +322,27 @@ export function Step5AIPrompt({ data, update, onPrev }: Props) {
         )}
 
       </motion.div>
+
+      {houseLayout && (
+        <div style={{ marginTop: '24px' }}>
+          <h3
+            style={{
+              color: '#e2e8f0',
+              marginBottom: '12px',
+              fontSize: '20px',
+            }}
+          >
+            🏠 3D House Preview
+          </h3>
+
+          <House3DPreview
+            layout={houseLayout}
+            plotWidth={Number(data.plotWidth) || undefined}
+            plotLength={Number(data.plotLength) || undefined}
+          />
+        </div>
+      )}
+
     </div>
   )
 }
