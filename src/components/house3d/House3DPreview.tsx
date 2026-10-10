@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react'
 import { Canvas, useThree } from '@react-three/fiber'
 import { OrbitControls, Html } from '@react-three/drei'
 import * as THREE from 'three'
+import { auth } from '../../firebase'
 
 /* ─────────────────────────────────────────────────────────────
    TYPES
@@ -35,7 +36,7 @@ interface Props {
     plotLength?: number
 }
 
-type ViewMode = 'top' | '3d'
+type ViewMode = 'top' | '3d' | 'front' | 'side'
 
 /* ─────────────────────────────────────────────────────────────
    ROOM COLOUR PALETTE
@@ -422,6 +423,150 @@ function PlotBoundary({ width, length, unit }: { width: number; length: number; 
 }
 
 /* ─────────────────────────────────────────────────────────────
+   EXTERIOR HOUSE VIEW (PROCEDURAL)
+───────────────────────────────────────────────────────────── */
+
+function ExteriorHouse({ bounds, plotWidth, plotLength }: { bounds: any, style?: string, plotWidth: number, plotLength: number }) {
+    const { cx, cz, w, l } = bounds
+    const wallHeight = 3.2
+    
+    // Modern architectural colors
+    const wallColor = "#f5f5f5"
+    const accentColor = "#2c2c2c"
+    const woodColor = "#8b5a2b"
+    const frameColor = "#1a1a1a"
+    const glassColor = "#87ceeb"
+    const roofColor = "#333333"
+
+    return (
+        <group position={[cx, 0, cz]}>
+            {/* 🌿 Landscaping & Ground Plane */}
+            <mesh position={[0, 0.01, 0]} receiveShadow>
+                <boxGeometry args={[plotWidth, 0.02, plotLength]} />
+                <meshStandardMaterial color="#6b8e23" />
+            </mesh>
+            
+            {/* Driveway/Pathway */}
+            <mesh position={[0, 0.02, l / 2 + (plotLength - l) / 4]} receiveShadow>
+                <boxGeometry args={[4, 0.02, (plotLength - l) / 2]} />
+                <meshStandardMaterial color="#9e9e9e" />
+            </mesh>
+
+            {/* Decorative Bushes/Trees */}
+            {[-1, 1].map((side, idx) => (
+                <group key={idx} position={[side * (w / 2 + 1.5), 0, l / 2 + 1]}>
+                    <mesh position={[0, 0.5, 0]} castShadow>
+                        <sphereGeometry args={[0.5, 16, 16]} />
+                        <meshStandardMaterial color="#228b22" />
+                    </mesh>
+                    <mesh position={[0, 0.2, 0]} castShadow>
+                        <cylinderGeometry args={[0.1, 0.1, 0.4]} />
+                        <meshStandardMaterial color="#4a3b2c" />
+                    </mesh>
+                </group>
+            ))}
+
+            {/* 🏗️ Main House Volume (Ground Floor) */}
+            <mesh position={[0, wallHeight / 2, 0]} castShadow receiveShadow>
+                <boxGeometry args={[w, wallHeight, l]} />
+                <meshStandardMaterial color={wallColor} />
+            </mesh>
+            
+            {/* 🪵 Wood Accent Wall (Ground Floor) */}
+            <mesh position={[-w * 0.25, wallHeight / 2, l / 2 + 0.01]} castShadow>
+                <boxGeometry args={[w * 0.3, wallHeight, 0.05]} />
+                <meshStandardMaterial color={woodColor} roughness={0.8} />
+            </mesh>
+
+            {/* 🪟 Large Dark-Framed Windows (Ground Floor) */}
+            <group position={[w * 0.25, wallHeight * 0.5, l / 2 + 0.02]}>
+                {/* Frame */}
+                <mesh castShadow>
+                    <boxGeometry args={[w * 0.35, wallHeight * 0.7, 0.1]} />
+                    <meshStandardMaterial color={frameColor} />
+                </mesh>
+                {/* Glass */}
+                <mesh position={[0, 0, 0.02]}>
+                    <boxGeometry args={[w * 0.33, wallHeight * 0.65, 0.1]} />
+                    <meshStandardMaterial color={glassColor} transparent opacity={0.6} metalness={0.9} roughness={0.1} />
+                </mesh>
+            </group>
+
+            {/* 🚪 Entrance Door */}
+            <group position={[-w * 0.25, 1.1, l / 2 + 0.04]}>
+                {/* Frame */}
+                <mesh castShadow>
+                    <boxGeometry args={[1.5, 2.2, 0.05]} />
+                    <meshStandardMaterial color={frameColor} />
+                </mesh>
+                {/* Door Panel */}
+                <mesh position={[0, 0, 0.01]}>
+                    <boxGeometry args={[1.3, 2.1, 0.05]} />
+                    <meshStandardMaterial color={woodColor} roughness={0.7} />
+                </mesh>
+                {/* Handle */}
+                <mesh position={[0.5, 0, 0.05]}>
+                    <boxGeometry args={[0.05, 0.4, 0.05]} />
+                    <meshStandardMaterial color="#e0e0e0" metalness={0.8} roughness={0.2} />
+                </mesh>
+            </group>
+
+            {/* 🏗️ Second Story Volume */}
+            <mesh position={[w * 0.1, wallHeight + wallHeight / 2, -l * 0.1]} castShadow receiveShadow>
+                <boxGeometry args={[w * 0.8, wallHeight, l * 0.8]} />
+                <meshStandardMaterial color={accentColor} />
+            </mesh>
+
+            {/* 🪟 Second Story Window */}
+            <group position={[w * 0.1, wallHeight + wallHeight * 0.5, l * 0.3 + 0.01]}>
+                <mesh castShadow>
+                    <boxGeometry args={[w * 0.4, wallHeight * 0.6, 0.05]} />
+                    <meshStandardMaterial color={frameColor} />
+                </mesh>
+                <mesh position={[0, 0, 0.02]}>
+                    <boxGeometry args={[w * 0.38, wallHeight * 0.55, 0.05]} />
+                    <meshStandardMaterial color={glassColor} transparent opacity={0.6} metalness={0.9} roughness={0.1} />
+                </mesh>
+            </group>
+
+            {/* 🌆 Balcony */}
+            <group position={[-w * 0.15, wallHeight, l * 0.4]}>
+                {/* Balcony Floor */}
+                <mesh castShadow receiveShadow>
+                    <boxGeometry args={[w * 0.3, 0.2, l * 0.2]} />
+                    <meshStandardMaterial color="#555555" />
+                </mesh>
+                {/* Glass Railing */}
+                <mesh position={[0, 0.6, l * 0.1 - 0.02]}>
+                    <boxGeometry args={[w * 0.3, 1.0, 0.04]} />
+                    <meshStandardMaterial color={glassColor} transparent opacity={0.4} metalness={0.5} roughness={0.1} />
+                </mesh>
+                <mesh position={[-w * 0.15 + 0.02, 0.6, 0]}>
+                    <boxGeometry args={[0.04, 1.0, l * 0.2]} />
+                    <meshStandardMaterial color={glassColor} transparent opacity={0.4} metalness={0.5} roughness={0.1} />
+                </mesh>
+                <mesh position={[w * 0.15 - 0.02, 0.6, 0]}>
+                    <boxGeometry args={[0.04, 1.0, l * 0.2]} />
+                    <meshStandardMaterial color={glassColor} transparent opacity={0.4} metalness={0.5} roughness={0.1} />
+                </mesh>
+            </group>
+
+            {/* 🏠 Flat Roofs */}
+            {/* Ground Floor Roof */}
+            <mesh position={[0, wallHeight + 0.1, 0]} castShadow>
+                <boxGeometry args={[w + 0.4, 0.2, l + 0.4]} />
+                <meshStandardMaterial color={roofColor} />
+            </mesh>
+            {/* Second Floor Roof */}
+            <mesh position={[w * 0.1, wallHeight * 2 + 0.1, -l * 0.1]} castShadow>
+                <boxGeometry args={[w * 0.8 + 0.4, 0.2, l * 0.8 + 0.4]} />
+                <meshStandardMaterial color={roofColor} />
+            </mesh>
+        </group>
+    )
+}
+
+/* ─────────────────────────────────────────────────────────────
    GROUND GRID
 ───────────────────────────────────────────────────────────── */
 
@@ -463,6 +608,16 @@ function CameraController(
                 px: cx, py: maxDim * 1.3 + 5, pz: cz + 0.01,
                 tx: cx, ty: 0, tz: cz,
             }
+        } else if (viewMode === 'front') {
+            target = {
+                px: cx, py: maxDim * 0.3, pz: cz + maxDim * 1.2,
+                tx: cx, ty: 0, tz: cz,
+            }
+        } else if (viewMode === 'side') {
+            target = {
+                px: cx + maxDim * 1.2, py: maxDim * 0.3, pz: cz,
+                tx: cx, ty: 0, tz: cz,
+            }
         } else {
             target = {
                 px: cx + maxDim * 0.7,
@@ -478,12 +633,20 @@ function CameraController(
         camera.lookAt(target.tx, target.ty, target.tz)
         camera.updateProjectionMatrix()
 
-        // Also update OrbitControls target
+        // If OrbitControls is already mounted, update its target
         if (controlsRef.current) {
             controlsRef.current.target.set(target.tx, target.ty, target.tz)
             controlsRef.current.update()
         }
     }, [camera, bounds, viewMode, controlsRef])
+
+    // Use a secondary effect to ensure OrbitControls catches up if it mounts after CameraController
+    useEffect(() => {
+        if (controlsRef.current && targetRef.current) {
+            controlsRef.current.target.set(targetRef.current.tx, targetRef.current.ty, targetRef.current.tz)
+            controlsRef.current.update()
+        }
+    }, [controlsRef.current]) // This dependency is intentionally on the current value to catch mount
 
     return null
 }
@@ -517,6 +680,13 @@ class CanvasErrorBoundary extends React.Component<
 
 export default function House3DPreview({ layout, plotWidth, plotLength }: Props) {
     const [viewMode, setViewMode] = useState<ViewMode>('3d')
+    const [mainMode, setMainMode] = useState<'interior' | 'exterior' | 'exterior_photo'>('interior')
+    
+    // Photorealistic render states
+    const [photoUrl, setPhotoUrl] = useState<string | null>(null)
+    const [isGeneratingPhoto, setIsGeneratingPhoto] = useState(false)
+    const [photoError, setPhotoError] = useState<string | null>(null)
+
     const controlsRef = useRef<any>(null) // eslint-disable-line @typescript-eslint/no-explicit-any
 
     // Validate rooms — filter out any with non-finite values
@@ -537,7 +707,7 @@ export default function House3DPreview({ layout, plotWidth, plotLength }: Props)
     const doors = useMemo(() => findDoors(validRooms), [validRooms])
 
     const houseBounds = useMemo(() => {
-        if (validRooms.length === 0) return { cx: pw / 2, cz: pl / 2, maxDim: Math.max(pw, pl) }
+        if (validRooms.length === 0) return { cx: pw / 2, cz: pl / 2, w: 10, l: 10, maxDim: Math.max(pw, pl) }
         let minX = Infinity, minZ = Infinity, maxX = -Infinity, maxZ = -Infinity
         validRooms.forEach(r => {
             minX = Math.min(minX, r.position.x)
@@ -549,12 +719,14 @@ export default function House3DPreview({ layout, plotWidth, plotLength }: Props)
         const cz = (minZ + maxZ) / 2
         const w = maxX - minX
         const l = maxZ - minZ
-        const houseMaxDim = Math.max(w, l, 10)
-        const plotMaxDim = Math.max(pw, pl)
-        // Frame house with context, capping out at 2.5x house size to prevent excessive shrinking
-        const framingMaxDim = Math.max(houseMaxDim * 1.5, Math.min(plotMaxDim, houseMaxDim * 2.5))
         
-        return { cx, cz, maxDim: framingMaxDim }
+        // Ensure a minimum dimension to avoid extreme zoom on very small houses
+        const houseMaxDim = Math.max(w, l, 8) 
+        
+        // Frame the house tightly instead of fitting the entire plot
+        const framingMaxDim = houseMaxDim * 1.2
+        
+        return { cx, cz, w, l, maxDim: framingMaxDim }
     }, [validRooms, pw, pl])
 
     const resetCamera = useCallback(() => {
@@ -570,6 +742,10 @@ export default function House3DPreview({ layout, plotWidth, plotLength }: Props)
 
                 if (current === 'top') {
                     controlsRef.current.object.position.set(cx, maxDim * 1.3 + 5, cz + 0.01)
+                } else if (current === 'front') {
+                    controlsRef.current.object.position.set(cx, maxDim * 0.3, cz + maxDim * 1.2)
+                } else if (current === 'side') {
+                    controlsRef.current.object.position.set(cx + maxDim * 1.2, maxDim * 0.3, cz)
                 } else {
                     controlsRef.current.object.position.set(
                         cx + maxDim * 0.7, maxDim * 0.6, cz + maxDim * 0.8
@@ -580,6 +756,52 @@ export default function House3DPreview({ layout, plotWidth, plotLength }: Props)
             return current
         })
     }, [houseBounds])
+
+    const generatePhotorealistic = async () => {
+        if (photoUrl) return // already generated
+        setIsGeneratingPhoto(true)
+        setPhotoError(null)
+        try {
+            const reqBody = {
+                style: layout.style || 'Modern',
+                house_type: layout.house_type || 'single_story',
+                bedrooms: layout.total_bedrooms || 3,
+                plot_width: pw,
+                plot_length: pl,
+                plot_unit: displayUnit
+            }
+
+            const token = auth.currentUser ? await auth.currentUser.getIdToken() : ''
+            const res = await fetch('http://127.0.0.1:8000/api/projects/exterior-render', {
+                method: 'POST',
+                headers: { 
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(reqBody)
+            })
+
+            const text = await res.text()
+            let data: any = {} // eslint-disable-line @typescript-eslint/no-explicit-any
+            try {
+                if (text) data = JSON.parse(text)
+            } catch {
+                throw new Error(`Server returned invalid format. Status: ${res.status}`)
+            }
+
+            if (!res.ok) {
+                const errMsg = data.error || data.detail || `Server error ${res.status}`
+                throw new Error(errMsg)
+            }
+
+            if (data.image) setPhotoUrl(data.image)
+            else throw new Error('No image data returned from server.')
+        } catch (err: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
+            setPhotoError(err.message || 'Failed to generate photorealistic render.')
+        } finally {
+            setIsGeneratingPhoto(false)
+        }
+    }
 
     // No valid rooms
     if (!layout?.rooms?.length) {
@@ -609,8 +831,41 @@ export default function House3DPreview({ layout, plotWidth, plotLength }: Props)
 
     return (
         <div style={styles.container}>
-            {/* Control bar */}
+            {/* Top Control Bar for Modes */}
             <div style={styles.controlBar}>
+                <div style={styles.viewToggle}>
+                    <button
+                        style={{
+                            ...styles.viewBtn,
+                            ...(mainMode === 'interior' ? styles.viewBtnActive : {}),
+                        }}
+                        onClick={() => setMainMode('interior')}
+                    >
+                        🚪 Interior Floor Plan
+                    </button>
+                    <button
+                        style={{
+                            ...styles.viewBtn,
+                            ...(mainMode === 'exterior' ? styles.viewBtnActive : {}),
+                        }}
+                        onClick={() => setMainMode('exterior')}
+                    >
+                        🏡 Interactive 3D
+                    </button>
+                    <button
+                        style={{
+                            ...styles.viewBtn,
+                            ...(mainMode === 'exterior_photo' ? styles.viewBtnActive : {}),
+                        }}
+                        onClick={() => {
+                            setMainMode('exterior_photo')
+                            generatePhotorealistic()
+                        }}
+                    >
+                        📸 Photorealistic Render
+                    </button>
+                </div>
+                
                 <div style={styles.viewToggle}>
                     <button
                         style={{
@@ -624,15 +879,34 @@ export default function House3DPreview({ layout, plotWidth, plotLength }: Props)
                     <button
                         style={{
                             ...styles.viewBtn,
+                            ...(viewMode === 'front' ? styles.viewBtnActive : {}),
+                        }}
+                        onClick={() => setViewMode('front')}
+                    >
+                        🖼 Front
+                    </button>
+                    <button
+                        style={{
+                            ...styles.viewBtn,
+                            ...(viewMode === 'side' ? styles.viewBtnActive : {}),
+                        }}
+                        onClick={() => setViewMode('side')}
+                    >
+                        📐 Side
+                    </button>
+                    <button
+                        style={{
+                            ...styles.viewBtn,
                             ...(viewMode === 'top' ? styles.viewBtnActive : {}),
                         }}
                         onClick={() => setViewMode('top')}
                     >
-                        📐 Top View
+                        🚁 Top View
                     </button>
                 </div>
+                
                 <button style={styles.resetBtn} onClick={resetCamera}>
-                    🔄 Reset
+                    🔍 Fit to Layout
                 </button>
             </div>
 
@@ -645,96 +919,136 @@ export default function House3DPreview({ layout, plotWidth, plotLength }: Props)
                 </div>
             )}
 
-            {/* 3D Canvas */}
+            {/* Canvas or Photo View */}
             <div style={styles.canvasWrap}>
-                <CanvasErrorBoundary
-                    fallback={
-                        <div style={{
-                            ...styles.emptyState,
-                            height: '100%', borderRadius: 0,
-                            border: 'none',
-                        }}>
-                            <span style={{ fontSize: '40px' }}>⚠️</span>
-                            <p style={{ color: '#f59e0b', fontSize: '14px', marginTop: '10px' }}>
-                                3D rendering error. Try refreshing.
-                            </p>
-                        </div>
-                    }
-                >
-                    <Canvas
-                        shadows
-                        camera={{
-                            fov: 50,
-                            near: 0.1,
-                            far: 2000,
-                            position: [
-                                houseBounds.cx + houseBounds.maxDim * 0.7,
-                                houseBounds.maxDim * 0.6,
-                                houseBounds.cz + houseBounds.maxDim * 0.8,
-                            ],
-                        }}
-                        gl={{ antialias: true }}
-                        style={{ background: '#f0f4f8' }}
+                {mainMode === 'exterior_photo' && (
+                    <div style={{
+                        width: '100%', height: '100%',
+                        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                        background: '#f0f4f8', position: 'relative'
+                    }}>
+                        {isGeneratingPhoto ? (
+                            <div style={{ textAlign: 'center', color: '#64748b' }}>
+                                <div style={{ fontSize: '48px', marginBottom: '16px', animation: 'spin 2s linear infinite' }}>⏳</div>
+                                <div style={{ fontSize: '16px', fontWeight: 600 }}>Generating Photorealistic Concept...</div>
+                                <div style={{ fontSize: '13px', marginTop: '8px' }}>Using AI to visualize your design</div>
+                            </div>
+                        ) : photoError ? (
+                            <div style={{ textAlign: 'center', color: '#ef4444', maxWidth: '400px' }}>
+                                <span style={{ fontSize: '48px', display: 'block', marginBottom: '16px' }}>❌</span>
+                                <h3 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '8px' }}>Generation Failed</h3>
+                                <div style={{ fontSize: '14px', marginBottom: '16px', lineHeight: 1.5 }}>{photoError}</div>
+                                <button style={{...styles.viewBtn, padding: '8px 24px', background: '#fee2e2'}} onClick={generatePhotorealistic}>🔄 Retry Generation</button>
+                            </div>
+                        ) : photoUrl ? (
+                            <div style={{ width: '100%', height: '100%', padding: '24px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                                <img src={photoUrl} alt="Photorealistic Concept" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', borderRadius: '12px', boxShadow: '0 20px 40px rgba(0,0,0,0.2)' }} />
+                                <div style={{ marginTop: '16px', fontSize: '14px', color: '#64748b', fontWeight: 500 }}>✨ AI-Generated Architectural Visualization</div>
+                            </div>
+                        ) : null}
+                    </div>
+                )}
+
+                
+                {mainMode !== 'exterior_photo' && (
+                    <CanvasErrorBoundary
+                        fallback={
+                            <div style={{
+                                ...styles.emptyState,
+                                height: '100%', borderRadius: 0,
+                                border: 'none',
+                            }}>
+                                <span style={{ fontSize: '40px' }}>⚠️</span>
+                                <p style={{ color: '#f59e0b', fontSize: '14px', marginTop: '10px' }}>
+                                    3D rendering error. Try refreshing.
+                                </p>
+                            </div>
+                        }
                     >
-                        <color attach="background" args={['#f0f4f8']} />
+                        <Canvas
+                            shadows
+                            camera={{
+                                fov: 50,
+                                near: 0.1,
+                                far: 2000,
+                                position: [
+                                    houseBounds.cx + houseBounds.maxDim * 0.7,
+                                    houseBounds.maxDim * 0.6,
+                                    houseBounds.cz + houseBounds.maxDim * 0.8,
+                                ],
+                            }}
+                            gl={{ antialias: true }}
+                            style={{ background: '#f0f4f8' }}
+                        >
+                            <color attach="background" args={['#f0f4f8']} />
 
-                        {/* Camera controller — uses useEffect, not useMemo */}
-                        <CameraController
-                            bounds={houseBounds}
-                            viewMode={viewMode}
-                            controlsRef={controlsRef}
-                        />
-
-                        {/* Lighting */}
-                        <ambientLight intensity={0.9} />
-                        <directionalLight
-                            position={[pw * 0.8, Math.max(pw, pl) * 0.8, pl * 0.8]}
-                            intensity={1.5}
-                            castShadow
-                        />
-                        <directionalLight
-                            position={[-pw * 0.3, Math.max(pw, pl) * 0.5, -pl * 0.3]}
-                            intensity={0.3}
-                        />
-                        <hemisphereLight args={['#b1c8e0', '#f5f0e8', 0.5]} />
-
-                        {/* Ground grid */}
-                        <GroundGrid
-                            size={Math.max(pw, pl) + 4}
-                            centerX={pw / 2}
-                            centerZ={pl / 2}
-                        />
-
-                        {/* Plot boundary */}
-                        <PlotBoundary width={pw} length={pl} unit={displayUnit} />
-
-                        {/* Room blocks */}
-                        {validRooms.map((room, index) => (
-                            <RoomBlock
-                                key={`${room.name}-${index}`}
-                                room={room}
-                                isTopView={viewMode === 'top'}
-                                unit={displayUnit}
+                            {/* Camera controller — uses useEffect, not useMemo */}
+                            <CameraController
+                                bounds={houseBounds}
+                                viewMode={viewMode}
+                                controlsRef={controlsRef}
                             />
-                        ))}
 
-                        {/* Doors (only in 3D view) */}
-                        {viewMode !== 'top' && doors.map((door, i) => (
-                            <DoorOpening key={`door-${i}`} door={door} />
-                        ))}
+                            {/* Lighting */}
+                            <ambientLight intensity={0.9} />
+                            <directionalLight
+                                position={[pw * 0.8, Math.max(pw, pl) * 0.8, pl * 0.8]}
+                                intensity={1.5}
+                                castShadow
+                            />
+                            <directionalLight
+                                position={[-pw * 0.3, Math.max(pw, pl) * 0.5, -pl * 0.3]}
+                                intensity={0.3}
+                            />
+                            <hemisphereLight args={['#b1c8e0', '#f5f0e8', 0.5]} />
 
-                        {/* Orbit controls */}
-                        <OrbitControls
-                            ref={controlsRef}
-                            makeDefault
-                            enableDamping
-                            dampingFactor={0.1}
-                            minDistance={3}
-                            maxDistance={Math.max(pw, pl) * 5}
-                            maxPolarAngle={viewMode === 'top' ? 0.1 : Math.PI / 2.1}
-                        />
-                    </Canvas>
-                </CanvasErrorBoundary>
+                            {/* Ground grid */}
+                            {mainMode === 'interior' && (
+                                <GroundGrid
+                                    size={Math.max(pw, pl) + 4}
+                                    centerX={pw / 2}
+                                    centerZ={pl / 2}
+                                />
+                            )}
+
+                            {mainMode === 'interior' ? (
+                                <>
+                                    {/* Plot boundary */}
+                                    <PlotBoundary width={pw} length={pl} unit={displayUnit} />
+
+                                    {/* Room blocks */}
+                                    {validRooms.map((room, index) => (
+                                        <RoomBlock
+                                            key={`${room.name}-${index}`}
+                                            room={room}
+                                            isTopView={viewMode === 'top'}
+                                            unit={displayUnit}
+                                        />
+                                    ))}
+
+                                    {/* Doors (only in 3D view) */}
+                                    {viewMode !== 'top' && doors.map((door, i) => (
+                                        <DoorOpening key={`door-${i}`} door={door} />
+                                    ))}
+                                </>
+                            ) : (
+                                <ExteriorHouse bounds={houseBounds} style={layout.style} plotWidth={pw} plotLength={pl} />
+                            )}
+
+                            {/* Orbit controls */}
+                            <OrbitControls
+                                ref={controlsRef}
+                                makeDefault
+                                enableDamping
+                                dampingFactor={0.1}
+                                minDistance={3}
+                                maxDistance={Math.max(pw, pl) * 5}
+                                maxPolarAngle={viewMode === 'top' ? 0.1 : Math.PI / 2.1}
+                                target={[houseBounds.cx, 0, houseBounds.cz]}
+                            />
+                        </Canvas>
+                    </CanvasErrorBoundary>
+                )}
             </div>
 
             {/* Legend */}
@@ -818,6 +1132,7 @@ const styles: Record<string, React.CSSProperties> = {
     canvasWrap: {
         width: '100%',
         height: '520px',
+        position: 'relative',
     },
     warningsBar: {
         padding: '10px 16px',

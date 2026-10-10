@@ -1,5 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { useRouter } from '../routerContext'
+import { sendPasswordResetEmail, type AuthError } from 'firebase/auth'
+import { auth } from '../firebase'
 
 function valEmail(v: string) {
   if (!v) return 'Email is required'
@@ -22,9 +24,15 @@ export default function ForgotPasswordPage() {
     setTouched(true)
     if (err) return
     setSubmitting(true)
-    await new Promise(r => setTimeout(r, 1200))
-    setSubmitting(false)
-    setSent(true)
+    try {
+      await sendPasswordResetEmail(auth, email)
+      setSent(true)
+    } catch (err) {
+      const error = err as AuthError
+      setError(error.message)
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   return (

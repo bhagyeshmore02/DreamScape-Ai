@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useRouter } from '../routerContext'
+import { useAuth } from '../AuthContext'
 
 /* ─────────────────────────────────────────────────────────────
    TYPES
@@ -44,6 +45,16 @@ const PROJECTS: Project[] = [
     beds: 3, baths: 2, floors: 1, area: '1,650 sq ft', modified: '3 days ago',
     thumb: '🌿', accent: 'linear-gradient(135deg, #10b981 0%, #06b6d4 100%)',
   },
+  {
+    id: 4, title: 'Mountain Retreat', style: 'Rustic Modern',
+    beds: 4, baths: 3, floors: 2, area: '3,100 sq ft', modified: '1 week ago',
+    thumb: '⛰️', accent: 'linear-gradient(135deg, #f59e0b 0%, #ef4444 100%)',
+  },
+  {
+    id: 5, title: 'Urban Loft', style: 'Industrial',
+    beds: 2, baths: 2, floors: 1, area: '1,200 sq ft', modified: '2 weeks ago',
+    thumb: '🏙', accent: 'linear-gradient(135deg, #64748b 0%, #0f172a 100%)',
+  },
 ]
 
 const ACTIVITY: Activity[] = [
@@ -67,8 +78,15 @@ export default function DashboardPage() {
   const [hoveredCard, setHoveredCard]     = useState<number | null>(null)
   const [hoveredStat, setHoveredStat]     = useState<number | null>(null)
   const [hoveredNav, setHoveredNav]       = useState<string | null>(null)
+  const { user, logout } = useAuth()
+  
+  const displayName = user?.displayName || user?.email?.split('@')[0] || 'User'
+  const initial = displayName.charAt(0).toUpperCase()
 
-  const handleLogout = () => navigate('landing')
+  const handleLogout = async () => {
+    await logout()
+    navigate('landing')
+  }
 
   return (
     <div style={S.root}>
@@ -206,15 +224,23 @@ export default function DashboardPage() {
                 className="avatar-btn"
                 onClick={() => { setProfileOpen(v => !v); setNotifOpen(false) }}
               >
-                <div style={S.avatar}>A</div>
+                {user?.photoURL ? (
+                  <img src={user.photoURL} alt="Avatar" style={S.avatar} />
+                ) : (
+                  <div style={S.avatar}>{initial}</div>
+                )}
                 <div style={S.avatarInfo}>
-                  <span style={S.avatarName}>Alex Rivera</span>
+                  <span style={S.avatarName}>{displayName}</span>
                   <span style={S.avatarPlan}>Pro Member</span>
                 </div>
                 <span style={{ fontSize: '12px', color: '#94a3b8' }}>▾</span>
               </button>
               {profileOpen && (
-                <div style={{ ...S.dropdown, right: 0, left: 'auto', minWidth: '180px' }} className="animate-fadeIn">
+                <div style={{ ...S.dropdown, right: 0, left: 'auto', minWidth: '220px' }} className="animate-fadeIn">
+                  <div style={{ padding: '10px 12px', borderBottom: '1px solid rgba(139,92,246,0.15)', marginBottom: '4px' }}>
+                    <p style={{ fontSize: '14px', fontWeight: 600, color: '#f1f5f9' }}>{displayName}</p>
+                    <p style={{ fontSize: '12px', color: '#94a3b8', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user?.email}</p>
+                  </div>
                   {['My Profile', 'Billing', 'Team', 'API Keys'].map(item => (
                     <div key={item} style={S.profileItem} className="notif-item">{item}</div>
                   ))}
@@ -242,7 +268,7 @@ export default function DashboardPage() {
                 <span style={S.welcomeBadgeDot} />
                 AI Engine Online
               </div>
-              <h1 style={S.welcomeTitle}>Welcome back, Alex 👋</h1>
+              <h1 style={S.welcomeTitle}>Welcome back, {displayName} 👋</h1>
               <p style={S.welcomeSub}>
                 Continue designing your dream home with AI. Your latest project is 78% complete.
               </p>
@@ -318,7 +344,7 @@ export default function DashboardPage() {
               <div style={S.sectionHeader}>
                 <div>
                   <h2 style={S.sectionTitle}>Recent Projects</h2>
-                  <p style={S.sectionSub}>Your latest AI-generated house designs</p>
+                  <p style={S.sectionSub}>Your latest AI-generated house designs <span style={{background: 'rgba(139,92,246,0.15)', color: '#a78bfa', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', marginLeft: '6px', fontWeight: 600}}>DEMO DATA</span></p>
                 </div>
                 <button style={S.seeAllBtn} className="see-all-btn">View all →</button>
               </div>

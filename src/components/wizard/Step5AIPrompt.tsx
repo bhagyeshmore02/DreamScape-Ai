@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import type { ProjectData } from '../../pages/CreateProjectPage'
-import ReactMarkdown from 'react-markdown'
 import House3DPreview from '../house3d/House3DPreview'
+import { auth } from '../../firebase'
 
 interface Props {
   data: ProjectData
@@ -23,7 +23,6 @@ const CURRENCY = new Intl.NumberFormat('en-US', { style: 'currency', currency: '
 export function Step5AIPrompt({ data, update, onPrev }: Props) {
   const [isGenerating, setIsGenerating] = useState(false)
   const [charCount, setCharCount] = useState(data.aiPrompt.length)
-  const [aiResult, setAiResult] = useState('')
   const [houseLayout, setHouseLayout] = useState<{
     house_type: string
     style: string
@@ -40,10 +39,12 @@ export function Step5AIPrompt({ data, update, onPrev }: Props) {
     setIsGenerating(true)
 
     try {
+      const token = auth.currentUser ? await auth.currentUser.getIdToken() : ''
       const response = await fetch('http://127.0.0.1:8000/api/projects/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
           project_name: data.projectName,
@@ -70,22 +71,31 @@ export function Step5AIPrompt({ data, update, onPrev }: Props) {
       })
 
       if (!response.ok) {
-        throw new Error('Failed to create project')
+        let errMsg = `HTTP Error ${response.status}`
+        try {
+          const errData = await response.json()
+          if (Array.isArray(errData.detail)) {
+            errMsg = errData.detail.map((e: any) => `${e.loc.join('.')}: ${e.msg}`).join(', ')
+          } else {
+            errMsg = errData.detail || errData.message || errMsg
+          }
+        } catch (_) {}
+        throw new Error(`Failed to create project: ${errMsg}`)
       }
 
       const result = await response.json()
 
       console.log('Backend response:', result)
 
-      setAiResult(result.ai_design)
 
-
+      const layoutToken = auth.currentUser ? await auth.currentUser.getIdToken() : ''
       const layoutResponse = await fetch(
         'http://127.0.0.1:8000/api/projects/layout',
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'Authorization': `Bearer ${layoutToken}`
           },
           body: JSON.stringify({
             project_name: data.projectName,
@@ -107,7 +117,16 @@ export function Step5AIPrompt({ data, update, onPrev }: Props) {
       )
 
       if (!layoutResponse.ok) {
-        throw new Error('Failed to generate house layout')
+        let errMsg = `HTTP Error ${layoutResponse.status}`
+        try {
+          const errData = await layoutResponse.json()
+          if (Array.isArray(errData.detail)) {
+            errMsg = errData.detail.map((e: any) => `${e.loc.join('.')}: ${e.msg}`).join(', ')
+          } else {
+            errMsg = errData.detail || errData.message || errMsg
+          }
+        } catch (_) {}
+        throw new Error(`Failed to generate house layout: ${errMsg}`)
       }
 
       const layoutResult = await layoutResponse.json()
@@ -116,7 +135,11 @@ export function Step5AIPrompt({ data, update, onPrev }: Props) {
 
     } catch (error) {
       console.error('Error:', error)
-      alert('Failed to connect to backend.')
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        alert('Network Error: Failed to connect to backend. Please check if the server is running.')
+      } else {
+        alert((error as Error).message)
+      }
     } finally {
       setIsGenerating(false)
     }
@@ -254,72 +277,6 @@ export function Step5AIPrompt({ data, update, onPrev }: Props) {
             )}
           </AnimatePresence>
         </motion.button>
-
-        {aiResult && (
-          <div
-            style={{
-              marginTop: '24px',
-              padding: '24px',
-              borderRadius: '16px',
-              background: '#f8fafc',
-              border: '1px solid #e2e8f0',
-            }}
-          >
-            <h3
-              style={{
-                marginBottom: '12px',
-                fontSize: '20px',
-                fontWeight: 700,
-              }}
-            >
-              ✨ AI Design Recommendation
-            </h3>
-
-            <ReactMarkdown
-              components={{
-                h3: ({ children }) => (
-                  <h3
-                    style={{
-                      marginTop: '20px',
-                      marginBottom: '10px',
-                      fontSize: '18px',
-                      fontWeight: 700,
-                      color: '#1e293b',
-                    }}
-                  >
-                    {children}
-                  </h3>
-                ),
-
-                p: ({ children }) => (
-                  <p
-                    style={{
-                      marginBottom: '12px',
-                      lineHeight: 1.7,
-                      color: '#475569',
-                    }}
-                  >
-                    {children}
-                  </p>
-                ),
-
-                li: ({ children }) => (
-                  <li
-                    style={{
-                      marginBottom: '6px',
-                      lineHeight: 1.6,
-                      color: '#475569',
-                    }}
-                  >
-                    {children}
-                  </li>
-                ),
-              }}
-            >
-              {aiResult}
-            </ReactMarkdown>
-          </div>
-        )}
 
       </motion.div>
 

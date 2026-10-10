@@ -1,5 +1,8 @@
-import { useState, type FormEvent } from 'react'
+import { useState, useEffect, type FormEvent } from 'react'
 import { useRouter } from '../routerContext'
+import { createUserWithEmailAndPassword, signInWithPopup, type AuthError, updateProfile } from 'firebase/auth'
+import { auth, googleProvider } from '../firebase'
+import { useAuth } from '../AuthContext'
 
 /* ── Google SVG ── */
 const GoogleIcon = () => (
@@ -62,6 +65,13 @@ export default function SignupPage() {
   const [touched, setTouched] = useState<Record<string, boolean>>({})
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
+  const { user } = useAuth()
+
+  useEffect(() => {
+    if (user) {
+      navigate('dashboard')
+    }
+  }, [user, navigate])
 
   const strength = getStrength(password)
 
@@ -90,9 +100,36 @@ export default function SignupPage() {
     setTouched({ name: true, email: true, password: true, confirm: true, agree: true })
     if (Object.values(errs).some(Boolean)) return
     setSubmitting(true)
-    await new Promise(r => setTimeout(r, 1400))
-    setSubmitting(false)
-    setSubmitted(true)
+
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password)
+      await updateProfile(userCredential.user, { displayName: name })
+      setSubmitted(true)
+      setTimeout(() => navigate('dashboard'), 2000)
+    } catch (error) {
+      const err = error as AuthError
+      let msg = 'Failed to create account'
+      if (err.code === 'auth/email-already-in-use') msg = 'Email is already registered'
+      else if (err.code === 'auth/weak-password') msg = 'Password is too weak'
+      setErrors(e => ({ ...e, firebase: msg }))
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const handleGoogle = async () => {
+    setSubmitting(true)
+    try {
+      await signInWithPopup(auth, googleProvider)
+      setSubmitted(true)
+    } catch (error) {
+      const err = error as AuthError
+      if (err.code !== 'auth/popup-closed-by-user') {
+        setErrors(e => ({ ...e, firebase: err.message }))
+      }
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   const inputStyle = (field: string): React.CSSProperties => ({
@@ -243,8 +280,15 @@ export default function SignupPage() {
           ) : (
             <form onSubmit={handleSubmit} noValidate style={{ display:'flex', flexDirection:'column', gap:'18px' }}>
 
+              {/* Firebase Error */}
+              {errors.firebase && (
+                <div style={{ padding: '12px', borderRadius: '8px', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#ef4444', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span>⚠</span> {errors.firebase}
+                </div>
+              )}
+
               {/* Google */}
-              <button id="google-signup-btn" type="button" className="auth-btn-google" style={{ width:'100%', padding:'13px', borderRadius:'12px', border:'1.5px solid rgba(255,255,255,0.1)', background:'rgba(255,255,255,0.03)', color:'#e2e8f0', fontSize:'15px', fontWeight:600, cursor:'pointer', fontFamily:"'Space Grotesk', sans-serif", display:'flex', alignItems:'center', justifyContent:'center', gap:'10px', transition:'all 0.2s' }}>
+              <button id="google-signup-btn" type="button" onClick={handleGoogle} disabled={submitting} className="auth-btn-google" style={{ width:'100%', padding:'13px', borderRadius:'12px', border:'1.5px solid rgba(255,255,255,0.1)', background:'rgba(255,255,255,0.03)', color:'#e2e8f0', fontSize:'15px', fontWeight:600, cursor:submitting ? 'not-allowed' : 'pointer', fontFamily:"'Space Grotesk', sans-serif", display:'flex', alignItems:'center', justifyContent:'center', gap:'10px', transition:'all 0.2s', opacity: submitting ? 0.7 : 1 }}>
                 <GoogleIcon />
                 Continue with Google
               </button>

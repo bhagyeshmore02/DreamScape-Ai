@@ -1,5 +1,8 @@
-import { useState, type FormEvent } from 'react'
+import { useState, useEffect, type FormEvent } from 'react'
 import { useRouter } from '../routerContext'
+import { signInWithEmailAndPassword, signInWithPopup, type AuthError } from 'firebase/auth'
+import { auth, googleProvider } from '../firebase'
+import { useAuth } from '../AuthContext'
 
 /* ── tiny reusable Google SVG ── */
 const GoogleIcon = () => (
@@ -29,10 +32,17 @@ export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPw, setShowPw] = useState(false)
-  const [errors, setErrors] = useState<{ email?: string; password?: string }>({})
+  const [errors, setErrors] = useState<{ email?: string; password?: string; firebase?: string }>({})
   const [touched, setTouched] = useState<{ email?: boolean; password?: boolean }>({})
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
+  const { user } = useAuth()
+
+  useEffect(() => {
+    if (user) {
+      navigate('dashboard')
+    }
+  }, [user, navigate])
 
   const validate = () => ({
     email: validateEmail(email),
@@ -46,10 +56,34 @@ export default function LoginPage() {
     setTouched({ email: true, password: true })
     if (errs.email || errs.password) return
     setSubmitting(true)
-    await new Promise(r => setTimeout(r, 1200))
-    setSubmitting(false)
-    setSubmitted(true)
-    navigate('dashboard')
+    
+    try {
+      await signInWithEmailAndPassword(auth, email, password)
+      setSubmitted(true)
+    } catch (error) {
+      const err = error as AuthError
+      let msg = 'Failed to sign in'
+      if (err.code === 'auth/invalid-credential') msg = 'Invalid email or password'
+      else if (err.code === 'auth/too-many-requests') msg = 'Too many attempts. Try again later.'
+      setErrors(e => ({ ...e, firebase: msg }))
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const handleGoogle = async () => {
+    setSubmitting(true)
+    try {
+      await signInWithPopup(auth, googleProvider)
+      setSubmitted(true)
+    } catch (error) {
+      const err = error as AuthError
+      if (err.code !== 'auth/popup-closed-by-user') {
+        setErrors(e => ({ ...e, firebase: err.message }))
+      }
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   const handleBlur = (field: 'email' | 'password') => {
@@ -206,8 +240,15 @@ export default function LoginPage() {
           ) : (
             <form onSubmit={handleSubmit} noValidate style={{ display:'flex', flexDirection:'column', gap:'20px' }}>
 
+              {/* Firebase Error */}
+              {errors.firebase && (
+                <div style={{ padding: '12px', borderRadius: '8px', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#ef4444', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span>⚠</span> {errors.firebase}
+                </div>
+              )}
+
               {/* Google button */}
-              <button id="google-login-btn" type="button" className="auth-btn-google" style={{ width:'100%', padding:'13px', borderRadius:'12px', border:'1.5px solid rgba(255,255,255,0.1)', background:'rgba(255,255,255,0.03)', color:'#e2e8f0', fontSize:'15px', fontWeight:600, cursor:'pointer', fontFamily:"'Space Grotesk', sans-serif", display:'flex', alignItems:'center', justifyContent:'center', gap:'10px', transition:'all 0.2s' }}>
+              <button id="google-login-btn" type="button" onClick={handleGoogle} disabled={submitting} className="auth-btn-google" style={{ width:'100%', padding:'13px', borderRadius:'12px', border:'1.5px solid rgba(255,255,255,0.1)', background:'rgba(255,255,255,0.03)', color:'#e2e8f0', fontSize:'15px', fontWeight:600, cursor:submitting ? 'not-allowed' : 'pointer', fontFamily:"'Space Grotesk', sans-serif", display:'flex', alignItems:'center', justifyContent:'center', gap:'10px', transition:'all 0.2s', opacity: submitting ? 0.7 : 1 }}>
                 <GoogleIcon />
                 Continue with Google
               </button>
