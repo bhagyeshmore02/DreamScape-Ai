@@ -40,7 +40,8 @@ export function Step5AIPrompt({ data, update, onPrev }: Props) {
 
     try {
       const token = auth.currentUser ? await auth.currentUser.getIdToken() : ''
-      const response = await fetch('http://127.0.0.1:8000/api/projects/', {
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000'
+      const response = await fetch(`${API_BASE_URL}/api/projects/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -90,7 +91,7 @@ export function Step5AIPrompt({ data, update, onPrev }: Props) {
 
       const layoutToken = auth.currentUser ? await auth.currentUser.getIdToken() : ''
       const layoutResponse = await fetch(
-        'http://127.0.0.1:8000/api/projects/layout',
+        `${API_BASE_URL}/api/projects/layout`,
         {
           method: 'POST',
           headers: {
