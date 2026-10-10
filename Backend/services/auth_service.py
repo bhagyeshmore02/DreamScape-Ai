@@ -10,34 +10,50 @@ security = HTTPBearer()
 def initialize_firebase():
     if not firebase_admin._apps:
         firebase_json_str = os.getenv("FIREBASE_SERVICE_ACCOUNT_JSON")
+        firebase_path_or_json = os.getenv("FIREBASE_CREDENTIALS_PATH")
+
+        # Handle the case where JSON content was accidentally put in the PATH variable
+        if not firebase_json_str and firebase_path_or_json and firebase_path_or_json.strip().startswith("{"):
+            firebase_json_str = firebase_path_or_json
+            firebase_path_or_json = None
+
         if firebase_json_str:
             try:
                 cred_dict = json.loads(firebase_json_str)
                 cred = credentials.Certificate(cred_dict)
                 firebase_admin.initialize_app(cred)
                 return True
+            except json.JSONDecodeError:
+                print("Error: Firebase JSON credential string is not valid JSON.")
+                raise ValueError("Invalid JSON in Firebase credentials environment variable.")
             except Exception as e:
-                print(f"Error initializing Firebase Admin from JSON env var: {e}")
-                raise ValueError(f"Failed to initialize Firebase Admin from FIREBASE_SERVICE_ACCOUNT_JSON: {e}")
+                print("Error initializing Firebase Admin from JSON environment variable.")
+                raise ValueError("Failed to initialize Firebase Admin from JSON.")
 
-        firebase_credentials_path = os.getenv("FIREBASE_CREDENTIALS_PATH")
-        if not firebase_credentials_path:
-            # We skip throwing an error here in development if no path is set to allow testing,
-            # but ideally you must have this for production.
+        if not firebase_path_or_json:
             print("WARNING: Neither FIREBASE_SERVICE_ACCOUNT_JSON nor FIREBASE_CREDENTIALS_PATH is set.")
             return False
         
-        if not os.path.isabs(firebase_credentials_path):
+        if not os.path.isabs(firebase_path_or_json):
             base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-            firebase_credentials_path = os.path.join(base_dir, firebase_credentials_path)
+            firebase_path_or_json = os.path.join(base_dir, firebase_path_or_json)
 
         try:
-            cred = credentials.Certificate(firebase_credentials_path)
+            if not os.path.exists(firebase_path_or_json):
+                print(f"WARNING: Firebase credentials file not found at {firebase_path_or_json}")
+                return False
+            cred = credentials.Certificate(firebase_path_or_json)
             firebase_admin.initialize_app(cred)
             return True
+        except OSError as e:
+            if e.errno == 36:
+                print("Error: The provided Firebase credentials path is too long. Did you accidentally paste JSON content instead of a file path?")
+                raise ValueError("Firebase credentials path is too long.")
+            print("OS Error initializing Firebase from path.")
+            raise ValueError("Failed to initialize Firebase Admin with path due to OS error.")
         except Exception as e:
-            print(f"Error initializing Firebase Admin from path: {e}")
-            raise ValueError(f"Failed to initialize Firebase Admin with path '{firebase_credentials_path}': {e}")
+            print("Error initializing Firebase Admin from path.")
+            raise ValueError("Failed to initialize Firebase Admin with path.")
     return True
 
 def verify_token(credentials: HTTPAuthorizationCredentials = Security(security)):
