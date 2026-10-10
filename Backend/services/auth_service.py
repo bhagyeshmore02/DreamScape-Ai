@@ -1,4 +1,5 @@
 import os
+import json
 import firebase_admin
 from firebase_admin import credentials, auth
 from fastapi import HTTPException, Security, status
@@ -8,11 +9,22 @@ security = HTTPBearer()
 
 def initialize_firebase():
     if not firebase_admin._apps:
+        firebase_json_str = os.getenv("FIREBASE_SERVICE_ACCOUNT_JSON")
+        if firebase_json_str:
+            try:
+                cred_dict = json.loads(firebase_json_str)
+                cred = credentials.Certificate(cred_dict)
+                firebase_admin.initialize_app(cred)
+                return True
+            except Exception as e:
+                print(f"Error initializing Firebase Admin from JSON env var: {e}")
+                raise ValueError(f"Failed to initialize Firebase Admin from FIREBASE_SERVICE_ACCOUNT_JSON: {e}")
+
         firebase_credentials_path = os.getenv("FIREBASE_CREDENTIALS_PATH")
         if not firebase_credentials_path:
             # We skip throwing an error here in development if no path is set to allow testing,
             # but ideally you must have this for production.
-            print("WARNING: FIREBASE_CREDENTIALS_PATH is not set.")
+            print("WARNING: Neither FIREBASE_SERVICE_ACCOUNT_JSON nor FIREBASE_CREDENTIALS_PATH is set.")
             return False
         
         if not os.path.isabs(firebase_credentials_path):
@@ -24,7 +36,7 @@ def initialize_firebase():
             firebase_admin.initialize_app(cred)
             return True
         except Exception as e:
-            print(f"Error initializing Firebase Admin: {e}")
+            print(f"Error initializing Firebase Admin from path: {e}")
             raise ValueError(f"Failed to initialize Firebase Admin with path '{firebase_credentials_path}': {e}")
     return True
 
