@@ -772,7 +772,8 @@ export default function House3DPreview({ layout, plotWidth, plotLength }: Props)
             }
 
             const token = auth.currentUser ? await auth.currentUser.getIdToken() : ''
-            const res = await fetch('http://127.0.0.1:8000/api/projects/exterior-render', {
+            const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000'
+            const res = await fetch(`${API_BASE_URL}/api/projects/exterior-render`, {
                 method: 'POST',
                 headers: { 
                   'Content-Type': 'application/json',
