@@ -3,6 +3,9 @@ import json
 import re
 from dotenv import load_dotenv
 from google import genai
+from google.genai import errors as genai_errors
+from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception, RetryError
+from fastapi import HTTPException
 
 load_dotenv()
 
@@ -10,14 +13,41 @@ client = genai.Client(
     api_key=os.getenv("GEMINI_API_KEY")
 )
 
+def _is_retryable_error(exception):
+    if not isinstance(exception, genai_errors.APIError):
+        return False
+    # Check string representation for common transient HTTP status codes
+    err_str = str(exception)
+    return any(code in err_str for code in ['429', '500', '502', '503', '504'])
+
+def _after_retry_log(retry_state):
+    # Log the attempt without exposing sensitive data
+    print(f"[Gemini API] Retry attempt {retry_state.attempt_number} for {retry_state.fn.__name__}. Error: {type(retry_state.outcome.exception()).__name__}")
+
+@retry(
+    stop=stop_after_attempt(3),
+    wait=wait_exponential(multiplier=1.5, min=2, max=8),
+    retry=retry_if_exception(_is_retryable_error),
+    after=_after_retry_log,
+    reraise=True
+)
+def _call_generate_content(model: str, contents: str):
+    return client.models.generate_content(model=model, contents=contents)
 
 def generate_design(prompt: str):
-    response = client.models.generate_content(
-        model="gemini-3.1-flash-lite",
-        contents=prompt
-    )
+    try:
+        response = _call_generate_content(
+            model="gemini-3.1-flash-lite",
+            contents=prompt
+        )
+        return response.text
+    except genai_errors.APIError as e:
+        print(f"[Gemini API] Final failure in generate_design: {type(e).__name__} - {e}")
+        raise HTTPException(
+            status_code=503,
+            detail="The AI model is currently experiencing high demand. Please try again in a few moments."
+        )
 
-    return response.text
 
 
 def generate_exterior_image(prompt: str) -> bytes:
@@ -104,10 +134,17 @@ Rules:
 - Keep the layout practical and compact.
 """
 
-    response = client.models.generate_content(
-        model="gemini-3.1-flash-lite",
-        contents=json_prompt
-    )
+    try:
+        response = _call_generate_content(
+            model="gemini-3.1-flash-lite",
+            contents=json_prompt
+        )
+    except genai_errors.APIError as e:
+        print(f"[Gemini API] Final failure in generate_house_layout: {type(e).__name__} - {e}")
+        raise HTTPException(
+            status_code=503,
+            detail="The AI model is currently experiencing high demand. Please try again in a few moments."
+        )
 
     cleaned = _clean_json_text(response.text)
 
