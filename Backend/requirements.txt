@@ -9,6 +9,7 @@ colorama==0.4.6
 cryptography==50.0.1
 distro==1.9.0
 fastapi==0.141.1
+firebase-admin==6.7.0
 filelock==4.1.0
 fsspec==2026.9.0
 google-auth==2.58.0
@@ -43,3 +44,4 @@ typing_extensions==4.16.0
 urllib3==2.7.0
 uvicorn==0.52.3
 websockets==16.1.1
+firebase-admin==6.7.0
