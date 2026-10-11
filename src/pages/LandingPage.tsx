@@ -843,7 +843,13 @@ export default function LandingPage() {
               style={{ ...styles.promptInput, position: 'absolute', opacity: 0, pointerEvents: 'none' }}
               placeholder=""
             />
-            <button id="generate-btn" style={styles.generateBtn} className="generate-btn">
+            <button
+              id="generate-btn"
+              type="button"
+              style={styles.generateBtn}
+              className="generate-btn"
+              onClick={() => navigate('create-project')}
+            >
               Generate House ✦
             </button>
           </div>
