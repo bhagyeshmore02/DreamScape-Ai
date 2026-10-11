@@ -11,6 +11,38 @@ interface Props {
 export function WizardProgressBar({ step, steps, completionPct }: Props) {
   return (
     <div style={S.wrap}>
+      <style>{`
+        @media (max-width: 600px) {
+          .cpw-progress-dot {
+            width: 36px !important;
+            height: 36px !important;
+          }
+          .cpw-progress-pulse {
+            width: 36px !important;
+            height: 36px !important;
+          }
+          .cpw-progress-track {
+            top: 50px !important;
+            left: 18px !important;
+            right: 18px !important;
+          }
+          .cpw-progress-label {
+            font-size: 9px !important;
+            max-width: 54px !important;
+            line-height: 1.15 !important;
+          }
+        }
+        @media (max-width: 420px) {
+          .cpw-progress-label:not(.active) {
+            display: none !important;
+          }
+          .cpw-progress-label.active {
+            display: block !important;
+            font-size: 10px !important;
+            max-width: 68px !important;
+          }
+        }
+      `}</style>
       {/* ── Completion label ── */}
       <div style={S.topRow}>
         <span style={S.overallLabel}>Overall Progress</span>
@@ -25,7 +57,7 @@ export function WizardProgressBar({ step, steps, completionPct }: Props) {
       </div>
 
       {/* Connector line underneath the dots */}
-      <div style={S.track}>
+      <div style={S.track} className="cpw-progress-track">
         <motion.div
           style={S.fill}
           animate={{ width: `${((step - 1) / (steps.length - 1)) * 100}%` }}
@@ -46,6 +78,7 @@ export function WizardProgressBar({ step, steps, completionPct }: Props) {
                 {active && (
                   <motion.div
                     style={S.pulse}
+                    className="cpw-progress-pulse"
                     animate={{ scale: [1, 1.7, 1], opacity: [0.6, 0, 0.6] }}
                     transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
                   />
@@ -57,6 +90,7 @@ export function WizardProgressBar({ step, steps, completionPct }: Props) {
                     ...(active  ? S.dotActive  : {}),
                     ...(pending ? S.dotPending : {}),
                   }}
+                  className="cpw-progress-dot"
                   animate={done ? { scale: [1, 1.15, 1] } : {}}
                   transition={{ duration: 0.3 }}
                 >
@@ -69,12 +103,15 @@ export function WizardProgressBar({ step, steps, completionPct }: Props) {
                   )}
                 </motion.div>
               </div>
-              <span style={{
-                ...S.label,
-                ...(active  ? S.labelActive  : {}),
-                ...(done    ? S.labelDone    : {}),
-                ...(pending ? S.labelPending : {}),
-              }}>
+              <span
+                className={`cpw-progress-label ${active ? 'active' : ''}`}
+                style={{
+                  ...S.label,
+                  ...(active  ? S.labelActive  : {}),
+                  ...(done    ? S.labelDone    : {}),
+                  ...(pending ? S.labelPending : {}),
+                }}
+              >
                 {s.label}
               </span>
             </div>

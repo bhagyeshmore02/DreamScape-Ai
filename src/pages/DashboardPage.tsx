@@ -92,20 +92,36 @@ export default function DashboardPage() {
     <div style={S.root}>
       <style>{CSS}</style>
 
-      {/* ══════════════════════ SIDEBAR ══════════════════════ */}
+      {/* ══════════════════════ SIDEBAR DRAWER ══════════════════════ */}
+      {sidebarOpen && (
+        <div
+          className="ds-sidebar-backdrop"
+          onClick={() => setSidebarOpen(false)}
+          aria-label="Close sidebar overlay"
+        />
+      )}
       <aside
         style={{ ...S.sidebar, ...(sidebarOpen ? S.sidebarOpen : {}) }}
-        onMouseLeave={() => setSidebarOpen(false)}
+        className={`ds-sidebar ${sidebarOpen ? 'open' : ''}`}
       >
         <div style={S.sidebarOrb} />
 
-        {/* Logo */}
-        <div style={S.logoWrap} onClick={() => navigate('landing')}>
-          <div style={S.logoIcon}>🏠</div>
-          <div style={S.logoTextWrap}>
-            <span style={S.logoText}>DreamScape</span>
-            <span style={S.logoBadge}>AI</span>
+        {/* Logo & mobile close button */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', position: 'relative', zIndex: 2 }}>
+          <div style={S.logoWrap} onClick={() => { setSidebarOpen(false); navigate('landing') }}>
+            <div style={S.logoIcon}>🏠</div>
+            <div style={S.logoTextWrap}>
+              <span style={S.logoText}>DreamScape</span>
+              <span style={S.logoBadge}>AI</span>
+            </div>
           </div>
+          <button
+            className="ds-sidebar-close"
+            onClick={() => setSidebarOpen(false)}
+            aria-label="Close sidebar"
+          >
+            ✕
+          </button>
         </div>
 
         <div style={S.sidebarDivider} />
@@ -124,6 +140,7 @@ export default function DashboardPage() {
                   ...(isHovered && !isActive ? S.navItemHover : {}),
                 }}
                 onClick={() => {
+                  setSidebarOpen(false)
                   if (item.id === 'create') { navigate('create-project'); return }
                   setActiveNav(item.id)
                 }}
@@ -156,24 +173,32 @@ export default function DashboardPage() {
 
         <div style={S.sidebarDivider} />
 
-        <button style={S.logoutBtn} className="logout-btn" onClick={handleLogout}>
+        <button
+          style={S.logoutBtn}
+          className="logout-btn"
+          onClick={() => {
+            setSidebarOpen(false)
+            handleLogout()
+          }}
+        >
           <span style={{ fontSize: '16px' }}>⬡</span>
           <span>Logout</span>
         </button>
       </aside>
 
-      {/* Sidebar toggle (mobile) */}
-      <button
-        style={S.sidebarToggle}
-        className="sidebar-toggle"
-        onClick={() => setSidebarOpen(v => !v)}
-      >☰</button>
-
       {/* ══════════════════════ MAIN ══════════════════════ */}
-      <main style={S.main}>
+      <main style={S.main} className="ds-main">
 
         {/* ── TOP BAR ── */}
-        <header style={S.topbar}>
+        <header style={S.topbar} className="ds-topbar">
+          {/* Hamburger toggle button for mobile */}
+          <button
+            className="ds-sidebar-toggle"
+            onClick={() => setSidebarOpen(v => !v)}
+            aria-label="Toggle navigation menu"
+          >
+            ☰
+          </button>
           <div style={{ ...S.searchWrap, ...(searchFocused ? S.searchWrapFocus : {}) }}>
             <span style={S.searchIcon}>🔍</span>
             <input
@@ -183,7 +208,7 @@ export default function DashboardPage() {
               onFocus={() => setSearchFocused(true)}
               onBlur={() => setSearchFocused(false)}
             />
-            <span style={S.searchKbd}>⌘K</span>
+            <span style={S.searchKbd} className="search-kbd">⌘K</span>
           </div>
 
           <div style={S.topbarRight}>
@@ -229,7 +254,7 @@ export default function DashboardPage() {
                 ) : (
                   <div style={S.avatar}>{initial}</div>
                 )}
-                <div style={S.avatarInfo}>
+                <div style={S.avatarInfo} className="avatar-info-text">
                   <span style={S.avatarName}>{displayName}</span>
                   <span style={S.avatarPlan}>Pro Member</span>
                 </div>
@@ -262,7 +287,7 @@ export default function DashboardPage() {
           <div style={S.orb2} />
 
           {/* ── WELCOME ── */}
-          <section style={S.welcomeSection} className="animate-fadeInUp">
+          <section style={S.welcomeSection} className="welcome-section animate-fadeInUp">
             <div style={S.welcomeText}>
               <div style={S.welcomeBadge}>
                 <span style={S.welcomeBadgeDot} />
@@ -281,7 +306,7 @@ export default function DashboardPage() {
                 </button>
               </div>
             </div>
-            <div style={S.welcomeVisual}>
+            <div style={S.welcomeVisual} className="welcome-visual">
               <div style={S.houseCard} className="house-card-float">
                 <div style={S.houseCardGlow} />
                 <div style={S.houseEmoji}>🏛</div>
@@ -300,7 +325,7 @@ export default function DashboardPage() {
           </section>
 
           {/* ── STATS ── */}
-          <section style={S.statsGrid}>
+          <section style={S.statsGrid} className="stats-grid">
             {STATS.map((stat, i) => (
               <div
                 key={i}
@@ -337,7 +362,7 @@ export default function DashboardPage() {
           </section>
 
           {/* ── BOTTOM GRID ── */}
-          <div style={S.bottomGrid}>
+          <div style={S.bottomGrid} className="bottom-grid">
 
             {/* Recent Projects */}
             <section style={S.projectsSection}>
@@ -348,7 +373,7 @@ export default function DashboardPage() {
                 </div>
                 <button style={S.seeAllBtn} className="see-all-btn">View all →</button>
               </div>
-              <div style={S.projectsGrid}>
+              <div style={S.projectsGrid} className="projects-grid">
                 {PROJECTS.map(proj => (
                   <div
                     key={proj.id}
@@ -373,7 +398,7 @@ export default function DashboardPage() {
                         <button style={S.projectMenuBtn} className="icon-btn">⋯</button>
                       </div>
 
-                      <div style={S.specsGrid}>
+                      <div style={S.specsGrid} className="specs-grid">
                         {[
                           { icon: '🛏', val: String(proj.beds),   lbl: 'Beds'   },
                           { icon: '🚿', val: String(proj.baths),  lbl: 'Baths'  },
@@ -981,6 +1006,9 @@ const CSS = `
     pointer-events: none;
   }
 
+  .ds-sidebar-toggle { display: none; }
+  .ds-sidebar-close { display: none; }
+
   @media (max-width: 1200px) {
     .bottom-grid { grid-template-columns: 1fr !important; }
   }
@@ -990,14 +1018,93 @@ const CSS = `
     .welcome-visual { margin-left: 0 !important; margin-top: 24px !important; }
   }
   @media (max-width: 768px) {
-    .ds-sidebar { transform: translateX(-100%) !important; }
-    .ds-sidebar.open { transform: translateX(0) !important; }
-    .ds-sidebar-toggle { display: flex !important; }
-    .ds-main { margin-left: 0 !important; }
+    .ds-sidebar {
+      transform: translateX(-100%) !important;
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+      z-index: 100 !important;
+      width: 280px !important;
+      box-shadow: 10px 0 40px rgba(0,0,0,0.6) !important;
+    }
+    .ds-sidebar.open {
+      transform: translateX(0) !important;
+    }
+    .ds-sidebar-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(8,11,20,0.8);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      z-index: 99;
+      animation: fadeInBackdrop 0.2s ease-out forwards;
+    }
+    .ds-sidebar-close {
+      display: flex !important;
+      background: transparent;
+      border: none;
+      color: #94a3b8;
+      font-size: 18px;
+      cursor: pointer;
+      padding: 6px;
+      align-items: center;
+      justify-content: center;
+    }
+    .ds-sidebar-toggle {
+      display: flex !important;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      height: 40px;
+      background: rgba(139,92,246,0.15);
+      border: 1px solid rgba(139,92,246,0.3);
+      border-radius: 10px;
+      color: #f1f5f9;
+      font-size: 20px;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: all 0.2s;
+    }
+    .ds-sidebar-toggle:hover {
+      background: rgba(139,92,246,0.25);
+      border-color: rgba(139,92,246,0.5);
+    }
+    .ds-main {
+      margin-left: 0 !important;
+      width: 100% !important;
+      min-width: 0 !important;
+    }
+    .ds-topbar {
+      padding: 10px 16px !important;
+      gap: 10px !important;
+    }
+    .projects-grid {
+      grid-template-columns: 1fr !important;
+    }
+  }
+  @media (max-width: 600px) {
+    .search-kbd {
+      display: none !important;
+    }
+    .avatar-info-text {
+      display: none !important;
+    }
   }
   @media (max-width: 520px) {
-    .stats-grid { grid-template-columns: 1fr 1fr !important; }
-    .projects-grid { grid-template-columns: 1fr !important; }
-    .content { padding: 16px !important; }
+    .stats-grid {
+      grid-template-columns: 1fr !important;
+    }
+    .content {
+      padding: 16px !important;
+    }
+    .welcome-section {
+      padding: 24px 18px !important;
+    }
+    .specs-grid {
+      grid-template-columns: repeat(2, 1fr) !important;
+      gap: 6px !important;
+    }
+  }
+  @keyframes fadeInBackdrop {
+    from { opacity: 0; }
+    to { opacity: 1; }
   }
 `
