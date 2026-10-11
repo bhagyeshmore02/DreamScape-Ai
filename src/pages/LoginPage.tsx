@@ -101,14 +101,15 @@ export default function LoginPage() {
     border: `1.5px solid ${hasErr ? 'rgba(239,68,68,0.6)' : 'rgba(139,92,246,0.2)'}`,
     background: 'rgba(15,21,33,0.7)',
     color: '#f1f5f9',
-    fontSize: '15px',
+    fontSize: '16px',
     fontFamily: "'Space Grotesk', sans-serif",
     outline: 'none',
+    boxSizing: 'border-box',
     transition: 'border-color 0.2s, box-shadow 0.2s',
   })
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', fontFamily: "'Space Grotesk', sans-serif", background: '#080b14' }}>
+    <div style={{ minHeight: '100vh', display: 'flex', fontFamily: "'Space Grotesk', sans-serif", background: '#080b14' }} className="auth-root">
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
 
@@ -140,10 +141,40 @@ export default function LoginPage() {
         .preview-card { animation: float 4s ease-in-out infinite; }
         .preview-card:nth-child(2) { animation-delay: 1.5s; }
         .preview-card:nth-child(3) { animation-delay: 3s; }
+
+        .auth-mobile-logo {
+          display: none;
+          align-items: center;
+          gap: 10px;
+          margin-bottom: 24px;
+          cursor: pointer;
+        }
+
+        @media (max-width: 900px) {
+          .auth-root {
+            flex-direction: column !important;
+          }
+          .auth-left-panel {
+            display: none !important;
+          }
+          .auth-mobile-logo {
+            display: flex !important;
+          }
+          .auth-right-panel {
+            padding: 28px 16px 40px !important;
+            min-height: 100vh !important;
+            width: 100% !important;
+            align-items: flex-start !important;
+          }
+          .auth-form-card {
+            max-width: 100% !important;
+            margin: 0 auto;
+          }
+        }
       `}</style>
 
       {/* ═══════════ LEFT PANEL ═══════════ */}
-      <div style={{
+      <div className="auth-left-panel" style={{
         width: '44%',
         minHeight: '100vh',
         background: 'linear-gradient(160deg, #0f0826 0%, #0a1628 40%, #080b14 100%)',
@@ -218,8 +249,14 @@ export default function LoginPage() {
       </div>
 
       {/* ═══════════ RIGHT PANEL ═══════════ */}
-      <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', padding:'40px 32px', background:'#080b14', overflowY:'auto', minHeight:'100vh' }}>
-        <div style={{ width:'100%', maxWidth:'440px', animation:'fadeInUp 0.7s ease-out forwards' }}>
+      <div className="auth-right-panel" style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', padding:'40px 32px', background:'#080b14', overflowY:'auto', minHeight:'100vh' }}>
+        <div className="auth-form-card" style={{ width:'100%', maxWidth:'440px', animation:'fadeInUp 0.7s ease-out forwards' }}>
+
+          {/* Mobile brand header (shown on mobile only) */}
+          <div className="auth-mobile-logo" onClick={() => navigate('landing')}>
+            <div style={{ width:'36px', height:'36px', borderRadius:'10px', background:'linear-gradient(135deg, #8b5cf6, #06b6d4)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'18px', boxShadow:'0 0 20px rgba(139,92,246,0.4)' }}>✦</div>
+            <span style={{ fontFamily:"'Outfit', sans-serif", fontWeight:800, fontSize:'20px', background:'linear-gradient(135deg, #a78bfa, #67e8f9)', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent', backgroundClip:'text' }}>DreamScape AI</span>
+          </div>
 
           {/* Header */}
           <div style={{ marginBottom:'36px' }}>

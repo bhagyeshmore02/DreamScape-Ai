@@ -182,14 +182,15 @@ export default function CreateProjectPage() {
       </AnimatePresence>
 
       {/* ── TOP BAR ── */}
-      <header style={S.topBar}>
-        <button style={S.backBtn} className="cpw-back-btn" onClick={() => navigate('dashboard')}>
+      <header style={S.topBar} className="cpw-topbar">
+        <button style={S.backBtn} className="cpw-back-btn" onClick={() => navigate('dashboard')} aria-label="Back to Dashboard">
           <span style={S.backArrow}>←</span>
-          <span>Back to Dashboard</span>
+          <span className="back-btn-text">Back to Dashboard</span>
+          <span className="back-btn-short">Back</span>
         </button>
 
-        <div style={S.topBarCenter}>
-          <div style={S.logoWrap}>
+        <div style={S.topBarCenter} className="cpw-topbar-center">
+          <div style={S.logoWrap} className="cpw-logo-wrap">
             <div style={S.logoIcon}>🏠</div>
             <span style={S.logoText}>DreamScape AI</span>
           </div>
@@ -202,16 +203,17 @@ export default function CreateProjectPage() {
           onClick={manualSave}
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.96 }}
+          aria-label="Save Draft"
         >
           <AnimatePresence mode="wait">
             {justSaved ? (
               <motion.span key="saved" style={S.saveDraftInner} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }}>
-                <span>✓</span> Saved!
+                <span>✓</span> <span className="save-draft-text">Saved!</span><span className="save-draft-short">Saved</span>
               </motion.span>
             ) : (
               <motion.span key="idle" style={S.saveDraftInner} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }}>
-                <span>💾</span> Save Draft
-                {lastSaved && <span style={S.lastSavedHint}>{formatTime(lastSaved)}</span>}
+                <span>💾</span> <span className="save-draft-text">Save Draft</span><span className="save-draft-short">Save</span>
+                {lastSaved && <span style={S.lastSavedHint} className="last-saved-hint">{formatTime(lastSaved)}</span>}
               </motion.span>
             )}
           </AnimatePresence>
@@ -479,11 +481,23 @@ const CSS = `
     color: #c4b5fd !important;
   }
 
+  .back-btn-short { display: none; }
+  .save-draft-short { display: none; }
+
   @media (max-width: 1100px) {
     .cpw-layout { grid-template-columns: 1fr !important; }
     .cpw-summary-col { position: static !important; }
   }
   @media (max-width: 640px) {
-    .cpw-layout { padding: 20px 16px 60px !important; }
+    .cpw-layout { padding: 16px 12px 60px !important; }
+    .cpw-topbar { padding: 10px 12px !important; gap: 8px !important; }
+    .back-btn-text { display: none !important; }
+    .back-btn-short { display: inline !important; }
+    .save-draft-text { display: none !important; }
+    .save-draft-short { display: inline !important; }
+    .last-saved-hint { display: none !important; }
+  }
+  @media (max-width: 440px) {
+    .cpw-logo-wrap { display: none !important; }
   }
 `

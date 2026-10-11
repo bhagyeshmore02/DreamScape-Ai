@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from '../routerContext'
+import { useAuth } from '../AuthContext'
 
 /* ===================================================
    INLINE STYLES — Design System
@@ -200,13 +201,14 @@ const styles: Record<string, React.CSSProperties> = {
   },
   heroHeading: {
     fontFamily: "'Outfit', sans-serif",
-    fontSize: 'clamp(42px, 7vw, 88px)',
+    fontSize: 'clamp(32px, 7vw, 88px)',
     fontWeight: 900,
-    lineHeight: 1.05,
-    letterSpacing: '-2px',
+    lineHeight: 1.1,
+    letterSpacing: '-1px',
     color: '#f1f5f9',
     animation: 'fadeInUp 0.8s ease-out 0.2s forwards',
     opacity: 0,
+    wordBreak: 'break-word',
   },
   heroHeadingGradient: {
     background: 'linear-gradient(135deg, #a78bfa 0%, #67e8f9 40%, #f9a8d4 80%)',
@@ -392,7 +394,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   featuresGrid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))',
     gap: '20px',
   },
   featureCard: {
@@ -597,7 +599,19 @@ const FEATURES = [
 =================================================== */
 export default function LandingPage() {
   const { navigate } = useRouter()
+  const { user, logout } = useAuth()
+  const [mobileNavOpen, setMobileNavOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
+
+  const handleLogout = async () => {
+    try {
+      await logout()
+      setMobileNavOpen(false)
+      navigate('landing')
+    } catch {
+      // ignore
+    }
+  }
   const [promptText, setPromptText] = useState('')
   const [isTyping, setIsTyping] = useState(false)
   const [hoveredCard, setHoveredCard] = useState<number | null>(null)
@@ -756,33 +770,316 @@ export default function LandingPage() {
           0%, 100% { opacity: 1; }
           50% { opacity: 0; }
         }
+
+        /* Mobile navigation drawer & hamburger */
+        .mobile-nav-toggle {
+          display: none;
+          background: rgba(139,92,246,0.15);
+          border: 1px solid rgba(139,92,246,0.3);
+          color: #f1f5f9;
+          font-size: 20px;
+          border-radius: 10px;
+          padding: 8px 12px;
+          cursor: pointer;
+          align-items: center;
+          justify-content: center;
+          transition: all 0.2s;
+        }
+        .mobile-nav-toggle:hover {
+          background: rgba(139,92,246,0.25);
+          border-color: rgba(139,92,246,0.5);
+        }
+        .mobile-nav-backdrop {
+          position: fixed;
+          inset: 0;
+          background: rgba(8,11,20,0.85);
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
+          z-index: 190;
+          animation: fadeInBackdrop 0.2s ease-out forwards;
+        }
+        .mobile-nav-drawer {
+          position: fixed;
+          top: 0;
+          right: 0;
+          bottom: 0;
+          width: 82%;
+          max-width: 320px;
+          background: #0d1222;
+          border-left: 1px solid rgba(139,92,246,0.25);
+          z-index: 200;
+          display: flex;
+          flex-direction: column;
+          padding: 24px 20px;
+          overflow-y: auto;
+          box-shadow: -10px 0 40px rgba(0,0,0,0.7);
+          animation: slideInDrawer 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        @keyframes fadeInBackdrop {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        @keyframes slideInDrawer {
+          from { transform: translateX(100%); }
+          to { transform: translateX(0); }
+        }
+
+        /* Breakpoints for landing page */
+        @media (max-width: 860px) {
+          .nav-desktop-links { display: none !important; }
+          .nav-desktop-actions { display: none !important; }
+          .mobile-nav-toggle { display: flex !important; }
+        }
+
+        @media (max-width: 640px) {
+          .hero-section {
+            padding: 100px 16px 60px !important;
+          }
+          .prompt-box {
+            flex-direction: column !important;
+            align-items: stretch !important;
+            padding: 14px !important;
+            border-radius: 16px !important;
+            gap: 12px !important;
+          }
+          .prompt-preview-wrap {
+            width: 100% !important;
+          }
+          .prompt-preview-text {
+            white-space: normal !important;
+            word-break: break-word !important;
+            line-height: 1.4 !important;
+            font-size: 14px !important;
+            max-height: 58px;
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+          }
+          .generate-btn {
+            width: 100% !important;
+            min-height: 48px !important;
+            padding: 14px 20px !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            border-radius: 12px !important;
+          }
+          .hero-stats-grid {
+            display: grid !important;
+            grid-template-columns: repeat(2, 1fr) !important;
+            gap: 16px 20px !important;
+            width: 100% !important;
+            max-width: 340px !important;
+            margin: 0 auto !important;
+          }
+          .hero-stat-divider {
+            display: none !important;
+          }
+          .hero-stat-col {
+            text-align: center !important;
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: center !important;
+            gap: 4px !important;
+          }
+          .gallery-fade-overlay {
+            width: 36px !important;
+          }
+          .gallery-card {
+            width: 220px !important;
+            height: 280px !important;
+          }
+          .cta-card {
+            padding: 40px 20px !important;
+            border-radius: 20px !important;
+          }
+          .cta-btns {
+            flex-direction: column !important;
+            width: 100% !important;
+          }
+          .cta-btn-action {
+            width: 100% !important;
+            text-align: center !important;
+            justify-content: center !important;
+          }
+          .footer-wrap {
+            flex-direction: column !important;
+            align-items: center !important;
+            text-align: center !important;
+            gap: 20px !important;
+          }
+          .footer-links-wrap {
+            justify-content: center !important;
+            flex-wrap: wrap !important;
+          }
+        }
       `}</style>
 
       {/* ================= NAVBAR ================= */}
       <nav style={{ ...styles.nav, ...(scrolled ? styles.navScrolled : {}) }}>
         {/* Logo */}
-        <div style={styles.logo}>
+        <div style={styles.logo} onClick={() => { navigate('landing'); window.scrollTo({ top: 0, behavior: 'smooth' }) }}>
           <div style={styles.logoIcon}>✦</div>
           <span style={styles.logoText}>DreamScape AI</span>
         </div>
 
-        {/* Links */}
-        <ul style={styles.navLinks}>
-          {['Designs', 'Generate', 'Gallery', 'Pricing', 'Docs'].map(link => (
-            <li key={link}>
-              <a style={styles.navLink} className="nav-link-hover">{link}</a>
+        {/* Desktop Links */}
+        <ul style={styles.navLinks} className="nav-desktop-links">
+          {[
+            { label: 'Designs', href: '#gallery' },
+            { label: 'Generate', href: '#prompt-input-box' },
+            { label: 'Gallery', href: '#gallery' },
+            { label: 'Features', href: '#features' },
+            { label: 'Pricing', href: '#cta' },
+          ].map(link => (
+            <li key={link.label}>
+              <a href={link.href} style={styles.navLink} className="nav-link-hover">{link.label}</a>
             </li>
           ))}
         </ul>
 
-        {/* Actions */}
-        <div style={styles.navActions}>
-          <button id="nav-login-btn" style={styles.btnOutline} className="btn-outline" onClick={() => navigate('login')}>Log In</button>
-          <button id="nav-signup-btn" style={styles.btnPrimary} className="btn-primary" onClick={() => navigate('signup')}>
-            Get Started Free ✦
-          </button>
+        {/* Desktop Actions */}
+        <div style={styles.navActions} className="nav-desktop-actions">
+          {user ? (
+            <>
+              <button id="nav-dash-btn" style={styles.btnOutline} className="btn-outline" onClick={() => navigate('dashboard')}>
+                Dashboard ⊞
+              </button>
+              <button
+                id="nav-logout-btn"
+                style={{ ...styles.btnOutline, borderColor: 'rgba(239,68,68,0.4)', color: '#f87171' }}
+                className="btn-outline"
+                onClick={handleLogout}
+              >
+                Log Out
+              </button>
+            </>
+          ) : (
+            <>
+              <button id="nav-login-btn" style={styles.btnOutline} className="btn-outline" onClick={() => navigate('login')}>
+                Log In
+              </button>
+              <button id="nav-signup-btn" style={styles.btnPrimary} className="btn-primary" onClick={() => navigate('signup')}>
+                Get Started Free ✦
+              </button>
+            </>
+          )}
         </div>
+
+        {/* Mobile Hamburger Toggle */}
+        <button
+          id="mobile-nav-toggle"
+          className="mobile-nav-toggle"
+          onClick={() => setMobileNavOpen(v => !v)}
+          aria-label={mobileNavOpen ? "Close navigation menu" : "Open navigation menu"}
+          aria-expanded={mobileNavOpen}
+        >
+          {mobileNavOpen ? '✕' : '☰'}
+        </button>
       </nav>
+
+      {/* Mobile Navigation Drawer */}
+      {mobileNavOpen && (
+        <>
+          <div className="mobile-nav-backdrop" onClick={() => setMobileNavOpen(false)} />
+          <div className="mobile-nav-drawer" role="dialog" aria-modal="true" aria-label="Mobile Navigation">
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '28px' }}>
+              <div style={styles.logo} onClick={() => { setMobileNavOpen(false); navigate('landing') }}>
+                <div style={styles.logoIcon}>✦</div>
+                <span style={styles.logoText}>DreamScape AI</span>
+              </div>
+              <button
+                onClick={() => setMobileNavOpen(false)}
+                style={{ background: 'transparent', border: 'none', color: '#94a3b8', fontSize: '20px', cursor: 'pointer', padding: '6px' }}
+                aria-label="Close menu"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Mobile Links */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '28px' }}>
+              {[
+                { name: 'Designs', hash: '#gallery' },
+                { name: 'Generate House', hash: '#prompt-input-box' },
+                { name: 'House Gallery', hash: '#gallery' },
+                { name: 'Features', hash: '#features' },
+                { name: 'Pricing', hash: '#cta' },
+              ].map(item => (
+                <a
+                  key={item.name}
+                  href={item.hash}
+                  onClick={() => setMobileNavOpen(false)}
+                  style={{
+                    padding: '12px 14px',
+                    borderRadius: '10px',
+                    color: '#e2e8f0',
+                    textDecoration: 'none',
+                    fontSize: '15px',
+                    fontWeight: 500,
+                    background: 'rgba(139,92,246,0.06)',
+                    display: 'block',
+                    transition: 'background 0.2s',
+                  }}
+                >
+                  {item.name}
+                </a>
+              ))}
+            </div>
+
+            <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {user ? (
+                <>
+                  <div style={{ padding: '10px 14px', borderRadius: '10px', background: 'rgba(139,92,246,0.1)', border: '1px solid rgba(139,92,246,0.2)' }}>
+                    <div style={{ fontSize: '11px', color: '#a78bfa', textTransform: 'uppercase', fontWeight: 600 }}>Signed in as</div>
+                    <div style={{ fontSize: '14px', color: '#f1f5f9', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis' }}>{user.displayName || user.email}</div>
+                  </div>
+                  <button
+                    id="mobile-nav-dash-btn"
+                    style={{ ...styles.btnPrimary, width: '100%', padding: '14px', textAlign: 'center', fontSize: '15px' }}
+                    onClick={() => { setMobileNavOpen(false); navigate('dashboard') }}
+                  >
+                    Open Dashboard ⊞
+                  </button>
+                  <button
+                    id="mobile-nav-logout-btn"
+                    style={{
+                      ...styles.btnOutline,
+                      width: '100%',
+                      padding: '12px',
+                      textAlign: 'center',
+                      borderColor: 'rgba(239,68,68,0.4)',
+                      color: '#f87171',
+                      background: 'rgba(239,68,68,0.06)',
+                    }}
+                    onClick={handleLogout}
+                  >
+                    Log Out
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    id="mobile-nav-login-btn"
+                    style={{ ...styles.btnOutline, width: '100%', padding: '12px', textAlign: 'center', fontSize: '15px' }}
+                    onClick={() => { setMobileNavOpen(false); navigate('login') }}
+                  >
+                    Log In
+                  </button>
+                  <button
+                    id="mobile-nav-signup-btn"
+                    style={{ ...styles.btnPrimary, width: '100%', padding: '14px', textAlign: 'center', fontSize: '15px' }}
+                    onClick={() => { setMobileNavOpen(false); navigate('signup') }}
+                  >
+                    Get Started Free ✦
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        </>
+      )}
 
       {/* ================= HERO ================= */}
       <section style={styles.hero} className="hero-section">
@@ -822,26 +1119,27 @@ export default function LandingPage() {
 
           {/* Prompt Box */}
           <div id="prompt-input-box" style={styles.promptBox} className="prompt-box">
-            <span style={{ fontSize: '18px', flexShrink: 0 }}>✦</span>
-            <span
-              style={{
-                flex: 1,
-                fontSize: '15px',
-                color: promptRef.current?.value ? '#f1f5f9' : '#94a3b8',
-                fontFamily: "'Space Grotesk', sans-serif",
-                lineHeight: 1,
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-              }}
-              className={isTyping ? 'cursor-blink' : ''}
-            >
-              {promptRef.current?.value || promptText || 'Example: Design a modern 2-floor villa with 4 bedrooms, a swimming pool, garden, home office, and open kitchen.'}
-            </span>
+            <div className="prompt-preview-wrap" style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: 0 }}>
+              <span style={{ fontSize: '18px', flexShrink: 0, color: '#a78bfa' }}>✦</span>
+              <span
+                style={{
+                  flex: 1,
+                  fontSize: '15px',
+                  color: promptRef.current?.value ? '#f1f5f9' : '#94a3b8',
+                  fontFamily: "'Space Grotesk', sans-serif",
+                  minWidth: 0,
+                }}
+                className={`prompt-preview-text ${isTyping ? 'cursor-blink' : ''}`}
+              >
+                {promptRef.current?.value || promptText || 'Example: Design a modern 2-floor villa with 4 bedrooms, a swimming pool, garden, home office, and open kitchen.'}
+              </span>
+            </div>
             <input
               ref={promptRef}
               type="text"
               style={{ ...styles.promptInput, position: 'absolute', opacity: 0, pointerEvents: 'none' }}
               placeholder=""
+              aria-label="Design prompt input"
             />
             <button
               id="generate-btn"
@@ -873,19 +1171,19 @@ export default function LandingPage() {
           </div>
 
           {/* Stats */}
-          <div style={styles.heroStats}>
+          <div style={styles.heroStats} className="hero-stats-grid">
             {[
               { value: '25K+', label: 'Houses Generated' },
               { value: '12K+', label: 'Active Users' },
               { value: '~10s', label: 'Avg. Gen Time' },
               { value: '4.9★', label: 'User Rating' },
             ].map((s, i) => (
-              <div key={s.label} style={{ display: 'flex', alignItems: 'center', gap: '40px' }}>
+              <div key={s.label} className="hero-stat-col" style={{ display: 'flex', alignItems: 'center', gap: '40px' }}>
                 <div style={styles.stat}>
                   <span style={styles.statValue}>{s.value}</span>
                   <span style={styles.statLabel}>{s.label}</span>
                 </div>
-                {i < 3 && <div style={styles.statDivider} />}
+                {i < 3 && <div style={styles.statDivider} className="hero-stat-divider" />}
               </div>
             ))}
           </div>
@@ -893,14 +1191,14 @@ export default function LandingPage() {
       </section>
 
       {/* ================= GALLERY STRIP ================= */}
-      <section style={styles.gallerySection}>
+      <section style={styles.gallerySection} id="gallery">
         {/* Fade edges */}
-        <div style={{
+        <div className="gallery-fade-overlay" style={{
           position: 'absolute', left: 0, top: 0, bottom: 0, width: '120px', zIndex: 2,
           background: 'linear-gradient(to right, #080b14, transparent)',
           pointerEvents: 'none',
         }} />
-        <div style={{
+        <div className="gallery-fade-overlay" style={{
           position: 'absolute', right: 0, top: 0, bottom: 0, width: '120px', zIndex: 2,
           background: 'linear-gradient(to left, #080b14, transparent)',
           pointerEvents: 'none',
@@ -948,7 +1246,7 @@ export default function LandingPage() {
       </section>
 
       {/* ================= FEATURES ================= */}
-      <section style={styles.featuresSection}>
+      <section style={styles.featuresSection} id="features">
         {/* Left aligned header */}
         <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
           <div style={styles.sectionLabel}>🏠 PLATFORM FEATURES</div>
@@ -962,7 +1260,7 @@ export default function LandingPage() {
             DreamScape AI brings together the most powerful home design tools into one seamless, intelligent platform.
           </p>
 
-          <div style={styles.featuresGrid}>
+          <div style={styles.featuresGrid} className="features-grid">
             {FEATURES.map((f, i) => (
               <div
                 key={i}
@@ -984,8 +1282,8 @@ export default function LandingPage() {
       </section>
 
       {/* ================= CTA ================= */}
-      <section style={styles.ctaSection}>
-        <div style={styles.ctaCard}>
+      <section style={styles.ctaSection} id="cta">
+        <div style={styles.ctaCard} className="cta-card">
           {/* Background glow */}
           <div style={{
             position: 'absolute', top: '-100px', left: '50%', transform: 'translateX(-50%)',
@@ -1006,11 +1304,14 @@ export default function LandingPage() {
               Join thousands of homeowners, architects &amp; designers.<br />
               No credit card required. Start free forever.
             </p>
-            <div style={styles.ctaBtns}>
-              <button id="cta-start-btn" style={styles.btnLarge} className="btn-large" onClick={() => navigate('signup')}>
+            <div style={styles.ctaBtns} className="cta-btns">
+              <button id="cta-start-btn" style={styles.btnLarge} className="btn-large cta-btn-action" onClick={() => navigate('signup')}>
                 Create Your First House ✦
               </button>
-              <button id="cta-gallery-btn" style={styles.btnLargeOutline} className="btn-large-outline">
+              <button id="cta-gallery-btn" style={styles.btnLargeOutline} className="btn-large-outline cta-btn-action" onClick={() => {
+                const el = document.getElementById('gallery');
+                el?.scrollIntoView({ behavior: 'smooth' });
+              }}>
                 Browse Designs →
               </button>
             </div>
@@ -1019,13 +1320,13 @@ export default function LandingPage() {
       </section>
 
       {/* ================= FOOTER ================= */}
-      <footer style={styles.footer}>
-        <div style={styles.logo}>
+      <footer style={styles.footer} className="footer-wrap">
+        <div style={styles.logo} onClick={() => { navigate('landing'); window.scrollTo({ top: 0, behavior: 'smooth' }) }}>
           <div style={{ ...styles.logoIcon, width: '30px', height: '30px', fontSize: '14px' }}>✦</div>
           <span style={{ ...styles.logoText, fontSize: '16px' }}>DreamScape AI</span>
         </div>
 
-        <ul style={styles.footerLinks}>
+        <ul style={styles.footerLinks} className="footer-links-wrap">
           {['Privacy', 'Terms', 'API', 'Blog', 'Careers', 'Status'].map(l => (
             <li key={l}>
               <span style={styles.footerLink} className="footer-link">{l}</span>

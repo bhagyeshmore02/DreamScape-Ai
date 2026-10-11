@@ -60,6 +60,16 @@ export default function ForgotPasswordPage() {
           background:linear-gradient(135deg, #9d6ef8, #8b5cf6) !important;
         }
         .fp-back:hover { color:#a78bfa !important; }
+
+        .fp-card {
+          padding: 48px 44px;
+        }
+        @media (max-width: 600px) {
+          .fp-card {
+            padding: 28px 18px !important;
+            border-radius: 20px !important;
+          }
+        }
       `}</style>
 
       {/* Background orbs */}
@@ -77,7 +87,7 @@ export default function ForgotPasswordPage() {
           <span style={{ fontFamily:"'Outfit', sans-serif", fontWeight:800, fontSize:'20px', background:'linear-gradient(135deg, #a78bfa, #67e8f9)', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent', backgroundClip:'text' }}>DreamScape AI</span>
         </div>
 
-        <div style={{ background:'rgba(15,21,33,0.8)', backdropFilter:'blur(24px)', WebkitBackdropFilter:'blur(24px)', border:'1px solid rgba(139,92,246,0.18)', borderRadius:'24px', padding:'48px 44px', boxShadow:'0 40px 80px rgba(0,0,0,0.4), 0 0 0 1px rgba(139,92,246,0.05)' }}>
+        <div className="fp-card" style={{ background:'rgba(15,21,33,0.8)', backdropFilter:'blur(24px)', WebkitBackdropFilter:'blur(24px)', border:'1px solid rgba(139,92,246,0.18)', borderRadius:'24px', boxShadow:'0 40px 80px rgba(0,0,0,0.4), 0 0 0 1px rgba(139,92,246,0.05)' }}>
 
           {sent ? (
             /* Success state */
@@ -136,7 +146,7 @@ export default function ForgotPasswordPage() {
                       border:`1.5px solid ${touched && error ? 'rgba(239,68,68,0.6)' : 'rgba(139,92,246,0.2)'}`,
                       background:'rgba(15,21,33,0.7)',
                       color:'#f1f5f9',
-                      fontSize:'15px',
+                      fontSize:'16px',
                       fontFamily:"'Space Grotesk', sans-serif",
                       transition:'border-color 0.2s, box-shadow 0.2s',
                       boxSizing:'border-box',
